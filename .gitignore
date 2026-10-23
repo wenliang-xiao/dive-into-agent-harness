@@ -20,6 +20,9 @@ build/
 .env.*
 !.env.example
 
+# 运行时数据（SQLite）
+data/
+
 # 日志
 *.log
 npm-debug.log*

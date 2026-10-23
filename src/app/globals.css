@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+/* 编辑部式视觉语言（浅色优先 + 暗色 class 切换） */
+:root {
+  --bg: #f7f5f2;
+  --paper: #ffffff;
+  --ink: #1c1917;
+  --muted: #78716c;
+  --line: #e7e5e4;
+  --accent: #4f46e5;
+  --info: #2563eb;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --ok: #16a34a;
+  --code-bg: #f0eeea;
+}
+
+.dark {
+  --bg: #121110;
+  --paper: #1c1917;
+  --ink: #e7e5e4;
+  --muted: #a8a29e;
+  --line: #292524;
+  --accent: #818cf8;
+  --info: #60a5fa;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --ok: #4ade80;
+  --code-bg: #262423;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-info: var(--info);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-code-bg: var(--code-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    sans-serif;
+}
+
+/* 章节正文排版 */
+.prose-chapter {
+  line-height: 1.8;
+  color: var(--ink);
+}
+.prose-chapter h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 1.5rem 0 1rem;
+}
+.prose-chapter h2 {
+  font-size: 1.5rem;
+  font-weight: 650;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 5rem;
+}
+.prose-chapter h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.8rem 0 0.7rem;
+  scroll-margin-top: 5rem;
+}
+.prose-chapter p {
+  margin: 0.9rem 0;
+}
+.prose-chapter a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-chapter ul,
+.prose-chapter ol {
+  padding-left: 1.4rem;
+  margin: 0.9rem 0;
+}
+.prose-chapter li {
+  margin: 0.35rem 0;
+}
+.prose-chapter blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.4rem 0 0.4rem 1rem;
+  margin: 1.2rem 0;
+  color: var(--muted);
+  background: var(--code-bg);
+  border-radius: 0 0.4rem 0.4rem 0;
+}
+.prose-chapter code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+}
+.prose-chapter pre {
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1.2rem 0;
+  line-height: 1.55;
+}
+.prose-chapter pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.prose-chapter table {
+  border-collapse: collapse;
+  margin: 1.2rem 0;
+  width: 100%;
+  font-size: 0.95rem;
+}
+.prose-chapter th,
+.prose-chapter td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+.prose-chapter th {
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--code-bg);
+}
+.prose-chapter img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1.2rem 0;
+}
+.prose-chapter hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 2rem 0;
+}
+
+/* 代码复制按钮（由脚本注入） */
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+pre:hover .copy-btn {
+  opacity: 1;
+}
