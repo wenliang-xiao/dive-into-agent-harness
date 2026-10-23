@@ -1,0 +1,42 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "工具调用：function calling 协议",
+    "subtitle": "声明 → tool_call → 校验 → 执行 → 回传 → 循环",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/tools/tool-calling.html"
+  },
+  "lanes": [
+    { "id": "main", "label": "主循环" },
+    { "id": "exit", "label": "出口" }
+  ],
+  "states": [
+    { "id": "declare", "type": "active", "label": "工具声明", "sublabel": "JSON Schema", "lane": "main", "col": 0, "step": "01", "tag": "model", "width": 132 },
+    { "id": "model", "type": "decision", "label": "模型判断", "sublabel": "要调工具吗？", "lane": "main", "col": 1, "step": "02", "tag": "check", "width": 132 },
+    { "id": "validate", "type": "active", "label": "参数校验", "sublabel": "validateArguments", "lane": "main", "col": 2, "step": "03", "tag": "work", "width": 140 },
+    { "id": "execute", "type": "active", "label": "执行工具", "sublabel": "tool.execute", "lane": "main", "col": 3, "step": "04", "tag": "work", "width": 132 },
+    { "id": "feedback", "type": "active", "label": "结果回传", "sublabel": "tool 消息 + id", "lane": "main", "col": 4, "step": "05", "tag": "work", "width": 140 },
+    { "id": "answer", "type": "success", "label": "返回答案", "sublabel": "无工具调用", "lane": "exit", "col": 1, "step": "06", "tag": "done", "width": 132 }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "declare", "to": "model", "variant": "default" },
+    { "id": "t2", "from": "model", "to": "validate", "label": "有工具调用", "variant": "emphasis" },
+    { "id": "t3", "from": "validate", "to": "execute", "variant": "default" },
+    { "id": "t4", "from": "execute", "to": "feedback", "variant": "default" },
+    { "id": "t5", "from": "feedback", "to": "model", "label": "循环", "variant": "emphasis", "route": "top-channel" },
+    { "id": "t6", "from": "model", "to": "answer", "label": "无工具·结束", "variant": "default", "route": "drop" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三要素",
+      "items": [
+        "工具声明：JSON Schema，告诉模型有什么工具",
+        "tool_call：模型只给意图（名字+参数），实现由 harness 负责",
+        "回传用 tool_call_id 关联，支持一次多个调用"
+      ]
+    }
+  ]
+}

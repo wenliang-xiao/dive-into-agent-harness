@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("multiagent");
@@ -55,6 +56,8 @@ async function coordinator(userRequest: string) {
 1. **worker 有独立 messages**——子任务的探索、试错都在自己的窗口里，不污染主上下文。
 2. **主 agent 只拿结论**——`dispatchWorker` 返回的是 worker 的最终输出，不是全过程。
 3. **并行**——互不依赖的子任务用 `Promise.all` 同时跑。
+
+<DiagramFrame src="/diagram/multiagent/coordinator.html" title="多 agent 编排：Coordinator（可交互）" />
 
 ## 源码层：Claude Code 的 Coordinator Mode
 

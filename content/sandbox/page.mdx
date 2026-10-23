@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("sandbox");
@@ -46,7 +47,9 @@ async function executeWithPermission(
 }
 ```
 
-关键设计：**拦截不是崩溃，而是「回传一条错误结果」**。模型看到「被拦截」后，可以调整策略——比如换一种不危险的做法，而不是整个 agent 卡死。
+关键设计：**拦截不是崩溃，而是「回传一条错误结果」**。
+
+<DiagramFrame src="/diagram/sandbox/permission.html" title="权限审批：beforeToolCall（可交互）" />模型看到「被拦截」后，可以调整策略——比如换一种不危险的做法，而不是整个 agent 卡死。
 
 ## 源码层：pi 的 beforeToolCall 钩子
 

@@ -1,0 +1,42 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "权限审批：beforeToolCall",
+    "subtitle": "每个工具执行前，先过一道权限检查",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/sandbox/permission.html"
+  },
+  "lanes": [
+    { "id": "agent", "label": "Agent Runtime" },
+    { "id": "policy", "label": "权限审批" }
+  ],
+  "phases": [
+    { "id": "p1", "label": "请求", "fromCol": 0, "toCol": 0 },
+    { "id": "p2", "label": "检查", "fromCol": 1, "toCol": 1 },
+    { "id": "p3", "label": "裁决", "fromCol": 2, "toCol": 2, "variant": "emphasis" }
+  ],
+  "mainPath": ["toolcall", "check", "execute"],
+  "nodes": [
+    { "id": "toolcall", "lane": "agent", "col": 0, "type": "backend", "label": "工具调用", "sublabel": "模型要求执行", "width": 132 },
+    { "id": "check", "lane": "agent", "col": 1, "type": "security", "label": "beforeToolCall", "sublabel": "权限检查钩子", "width": 150 },
+    { "id": "execute", "lane": "agent", "col": 2, "type": "backend", "label": "放行·执行", "sublabel": "tool.execute", "width": 132 },
+    { "id": "block", "lane": "policy", "col": 2, "type": "security", "label": "拦截", "sublabel": "返回错误结果", "width": 132 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "toolcall", "to": "check", "variant": "default" },
+    { "id": "e2", "from": "check", "to": "execute", "label": "放行", "variant": "emphasis" },
+    { "id": "e3", "from": "check", "to": "block", "label": "block", "variant": "security", "role": "error" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "拦截 ≠ 崩溃",
+      "items": [
+        "block 返回 isError 结果回传模型，循环照常继续",
+        "模型看到「被拦」后调整策略，换一种不危险的做法"
+      ]
+    }
+  ]
+}

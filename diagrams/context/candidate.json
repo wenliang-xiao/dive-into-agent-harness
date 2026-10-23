@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "五级压缩：从轻到重",
+    "subtitle": "Claude Code 的多档预警状态机",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/context/compaction.html"
+  },
+  "lanes": [
+    { "id": "flow", "label": "压缩流水线" }
+  ],
+  "phases": [
+    { "id": "p1", "label": "监控", "fromCol": 0, "toCol": 0 },
+    { "id": "p2", "label": "从轻到重", "fromCol": 1, "toCol": 4, "variant": "emphasis" },
+    { "id": "p3", "label": "收尾", "fromCol": 5, "toCol": 5 }
+  ],
+  "mainPath": ["monitor", "snip", "micro", "collapse", "auto", "assemble"],
+  "nodes": [
+    { "id": "monitor", "lane": "flow", "col": 0, "type": "backend", "label": "监控用量", "sublabel": "逼近窗口上限？", "width": 132 },
+    { "id": "snip", "lane": "flow", "col": 1, "type": "backend", "label": "1. Snip", "sublabel": "截断超长历史", "width": 132 },
+    { "id": "micro", "lane": "flow", "col": 2, "type": "backend", "label": "2. Microcompact", "sublabel": "工具结果瘦身", "width": 150 },
+    { "id": "collapse", "lane": "flow", "col": 3, "type": "backend", "label": "3. Collapse", "sublabel": "折叠重复内容", "width": 140 },
+    { "id": "auto", "lane": "flow", "col": 4, "type": "security", "label": "4. Auto Compact", "sublabel": "fork 子 agent 摘要", "width": 150 },
+    { "id": "assemble", "lane": "flow", "col": 5, "type": "backend", "label": "5. 组装请求", "sublabel": "normalizeMessages", "width": 150 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "monitor", "to": "snip", "label": "仍不够", "variant": "default" },
+    { "id": "e2", "from": "snip", "to": "micro", "label": "仍不够", "variant": "default" },
+    { "id": "e3", "from": "micro", "to": "collapse", "label": "仍不够", "variant": "default" },
+    { "id": "e4", "from": "collapse", "to": "auto", "label": "仍不够", "variant": "emphasis" },
+    { "id": "e5", "from": "auto", "to": "assemble", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "熔断器",
+      "items": [
+        "MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3",
+        "连续失败 3 次就停，避免死循环浪费 API 调用"
+      ]
+    }
+  ]
+}

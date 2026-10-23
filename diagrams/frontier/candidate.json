@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "生产化：corojaw 模块结构",
+    "subtitle": "单进程循环 → 拆成可独立扩展的微服务",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/frontier/corojaw.html"
+  },
+  "components": [
+    { "id": "client", "type": "external", "label": "客户端", "sublabel": "请求", "pos": [40, 250], "size": [120, 60] },
+    { "id": "gateway", "type": "backend", "label": "gateway", "sublabel": "入口网关", "pos": [220, 250], "size": [130, 60] },
+    { "id": "loop", "type": "backend", "label": "loop", "sublabel": "核心循环", "pos": [420, 150], "size": [130, 60], "tag": "第 2 章" },
+    { "id": "proto", "type": "messagebus", "label": "proto", "sublabel": "gRPC 协议", "pos": [420, 340], "size": [130, 60] },
+    { "id": "model", "type": "backend", "label": "model", "sublabel": "模型接入", "pos": [640, 60], "size": [130, 60], "tag": "第 3 章" },
+    { "id": "tool", "type": "backend", "label": "tool", "sublabel": "工具系统", "pos": [640, 160], "size": [130, 60], "tag": "第 5 章" },
+    { "id": "session", "type": "backend", "label": "session", "sublabel": "会话状态", "pos": [640, 260], "size": [130, 60], "tag": "第 4 章" },
+    { "id": "context", "type": "backend", "label": "context", "sublabel": "上下文工程", "pos": [640, 360], "size": [130, 60], "tag": "第 4 章" },
+    { "id": "llm", "type": "cloud", "label": "大模型 API", "sublabel": "模型服务", "pos": [860, 60], "size": [130, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "corojaw 生产化 harness", "wraps": ["gateway", "loop", "proto", "model", "tool", "session", "context"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "client", "to": "gateway", "variant": "emphasis" },
+    { "id": "c2", "from": "gateway", "to": "loop" },
+    { "id": "c3", "from": "loop", "to": "proto", "label": "协议总线" },
+    { "id": "c4", "from": "proto", "to": "model", "variant": "dashed" },
+    { "id": "c5", "from": "proto", "to": "tool", "variant": "dashed" },
+    { "id": "c6", "from": "proto", "to": "session", "variant": "dashed" },
+    { "id": "c7", "from": "proto", "to": "context", "variant": "dashed" },
+    { "id": "c8", "from": "model", "to": "llm", "label": "调用模型" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "核心没变",
+      "items": [
+        "第二章的 runLoop，生产化后就是 loop 模块",
+        "不是重写，是拆解 + 放大"
+      ]
+    }
+  ]
+}

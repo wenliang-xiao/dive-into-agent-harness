@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("eval");
@@ -52,6 +53,8 @@ async function benchmarkSessionList(sampleCount = 100): Promise<{ median: number
 1. **测「用户路径」**——不是测某个内部函数，而是测用户真正感知到的操作（`session.list`）。
 2. **多次采样取中位数**——单次耗时抖动大，中位数更稳。
 3. **预算断言**——`median < BUDGET_MS`，超了就失败，性能回退立刻暴露。
+
+<DiagramFrame src="/diagram/eval/benchmark.html" title="评测：benchmark 流程（可交互）" />
 
 ## 源码层：deepseek-harness 的 benchmark 体系
 

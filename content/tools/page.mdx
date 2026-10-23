@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("tools");
@@ -78,6 +79,8 @@ if (reply.tool_calls) {
 1. **工具声明是 JSON Schema**——模型靠它决定「该调哪个、传什么参数」。
 2. **tool_call 只是意图**——只有名字和参数，没有实现。实现永远由 harness 负责。
 3. **回传用 `tool_call_id` 关联**——模型一次可能调多个工具，id 让它知道「这个结果对应我哪次调用」。
+
+<DiagramFrame src="/diagram/tools/tool-calling.html" title="工具调用：function calling 协议（可交互）" />
 
 ## 源码层：pi 的工具执行链路
 

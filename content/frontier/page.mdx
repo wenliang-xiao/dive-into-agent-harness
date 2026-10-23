@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("frontier");
@@ -42,6 +43,8 @@ export const questions = getQuestions("frontier");
 | `corojaw-tool` | 第 5 章 沙箱 | 工具系统 |
 | `corojaw-context` | 第 4 章 | 上下文工程 |
 | `corojaw-proto` | — | 模块间通信协议（gRPC） |
+
+<DiagramFrame src="/diagram/frontier/corojaw.html" title="生产化：corojaw 模块结构（可交互）" />
 
 你会发现一件美妙的事：**我们第二章那个 `runLoop` 函数，在生产化后就是 `corojaw-loop` 一个独立服务**。核心没变，只是从「单进程里的一个函数」变成了「可独立扩展、独立部署的服务」。
 

@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "多 agent 编排：Coordinator",
+    "subtitle": "协调者拆任务、派发、汇总，worker 并行执行",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/multiagent/coordinator.html"
+  },
+  "lanes": [
+    { "id": "coordinator", "label": "协调者 Coordinator" },
+    { "id": "worker", "label": "Worker（独立 loop）" }
+  ],
+  "phases": [
+    { "id": "p1", "label": "拆解", "fromCol": 0, "toCol": 1 },
+    { "id": "p2", "label": "派发", "fromCol": 2, "toCol": 2 },
+    { "id": "p3", "label": "并行执行", "fromCol": 3, "toCol": 3, "variant": "emphasis" },
+    { "id": "p4", "label": "汇总", "fromCol": 4, "toCol": 4 }
+  ],
+  "mainPath": ["user", "decompose", "dispatch", "workerA", "summarize"],
+  "nodes": [
+    { "id": "user", "lane": "coordinator", "col": 0, "type": "external", "label": "用户请求", "sublabel": "复杂任务", "width": 132 },
+    { "id": "decompose", "lane": "coordinator", "col": 1, "type": "backend", "label": "拆任务", "sublabel": "分解成子任务", "width": 132 },
+    { "id": "dispatch", "lane": "coordinator", "col": 2, "type": "backend", "label": "派发", "sublabel": "AgentTool", "width": 132 },
+    { "id": "workerA", "lane": "worker", "col": 3, "type": "backend", "label": "Worker A", "sublabel": "调研 auth", "width": 120, "yOffset": -70 },
+    { "id": "workerB", "lane": "worker", "col": 3, "type": "backend", "label": "Worker B", "sublabel": "调研测试", "width": 120, "yOffset": 0 },
+    { "id": "workerC", "lane": "worker", "col": 3, "type": "backend", "label": "Worker C", "sublabel": "实现修复", "width": 120, "yOffset": 70 },
+    { "id": "summarize", "lane": "coordinator", "col": 4, "type": "backend", "label": "汇总结论", "sublabel": "只拿结论", "width": 132 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "user", "to": "decompose", "variant": "default" },
+    { "id": "e2", "from": "decompose", "to": "dispatch", "variant": "default" },
+    { "id": "e3", "from": "dispatch", "to": "workerA", "label": "并行", "variant": "emphasis" },
+    { "id": "e4", "from": "dispatch", "to": "workerB", "variant": "emphasis" },
+    { "id": "e5", "from": "dispatch", "to": "workerC", "variant": "emphasis" },
+    { "id": "e6", "from": "workerA", "to": "summarize", "variant": "default" },
+    { "id": "e7", "from": "workerB", "to": "summarize", "variant": "default" },
+    { "id": "e8", "from": "workerC", "to": "summarize", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "隔离上下文",
+      "items": [
+        "worker 有独立 messages，中间过程不污染主上下文",
+        "协调者只拿结论，不搬砖"
+      ]
+    }
+  ]
+}
