@@ -2,42 +2,52 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "核心循环：我们 vs pi",
-    "subtitle": "我们 1 个函数，pi 拆成 7 个协作函数",
+    "title": "我们 20 行 = pi 400 行的骨架",
+    "subtitle": "虚线是「对应关系」：我们的每一步，pi 用一个专职函数实现",
     "locale": "zh-CN",
     "quality_profile": "showcase",
     "output": "diagrams/loop/comparison.html"
   },
   "components": [
-    { "id": "d2a", "type": "backend", "label": "runLoop", "sublabel": "我们：20 行全在这", "pos": [70, 300], "size": [150, 60], "tag": "从零实现" },
-    { "id": "pi-loop", "type": "backend", "label": "runLoop", "sublabel": ":157 主循环", "pos": [380, 130], "size": [150, 56] },
-    { "id": "pi-stream", "type": "backend", "label": "streamAssistantResponse", "sublabel": ":381 流式输出", "pos": [380, 240], "size": [170, 56] },
-    { "id": "pi-execute", "type": "backend", "label": "executeToolCalls", "sublabel": ":508 执行工具", "pos": [380, 350], "size": [160, 56] },
-    { "id": "pi-finish", "type": "backend", "label": "finishTurn", "sublabel": ":286 判断结束", "pos": [380, 460], "size": [150, 56] },
-    { "id": "pi-prepare", "type": "backend", "label": "prepareToolCall", "sublabel": ":708 校验+权限", "pos": [660, 290], "size": [160, 56] },
-    { "id": "pi-run", "type": "backend", "label": "executePreparedToolCall", "sublabel": ":821 真执行", "pos": [660, 390], "size": [170, 56] },
-    { "id": "pi-result", "type": "backend", "label": "createToolResultMessage", "sublabel": ":930 封装结果", "pos": [660, 490], "size": [180, 56] }
+    { "id": "d2a", "type": "backend", "label": "runLoop（我们）", "sublabel": "20 行：循环+调模型+执行+回填", "pos": [70, 300], "size": [160, 66], "tag": "从零实现" },
+    { "id": "pi-loop", "type": "backend", "label": "runLoop", "sublabel": "主循环·调度这一切", "pos": [400, 110], "size": [160, 56] },
+    { "id": "pi-stream", "type": "backend", "label": "streamAssistantResponse", "sublabel": "调模型·流式输出", "pos": [400, 230], "size": [190, 56] },
+    { "id": "pi-execute", "type": "backend", "label": "executeToolCalls", "sublabel": "执行工具·顺序/并行", "pos": [400, 350], "size": [180, 56] },
+    { "id": "pi-finish", "type": "backend", "label": "finishTurn", "sublabel": "判断继续/结束", "pos": [400, 470], "size": [160, 56] },
+    { "id": "pi-prepare", "type": "backend", "label": "prepareToolCall", "sublabel": "找工具+校验参数+权限检查", "pos": [680, 290], "size": [200, 56] },
+    { "id": "pi-run", "type": "backend", "label": "executePreparedToolCall", "sublabel": "真正调用 tool.execute", "pos": [680, 390], "size": [200, 56] },
+    { "id": "pi-result", "type": "backend", "label": "createToolResultMessage", "sublabel": "把结果封装成消息", "pos": [680, 490], "size": [190, 56] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "我们的 20 行", "wraps": ["d2a"] },
-    { "kind": "region", "label": "pi 的 400 行（agent-loop.ts）", "wraps": ["pi-loop", "pi-stream", "pi-execute", "pi-finish", "pi-prepare", "pi-run", "pi-result"] }
+    { "kind": "region", "label": "我们：从零实现", "wraps": ["d2a"] },
+    { "kind": "region", "label": "pi：生产级 agent-loop.ts", "wraps": ["pi-loop", "pi-stream", "pi-execute", "pi-finish", "pi-prepare", "pi-run", "pi-result"] }
   ],
   "connections": [
-    { "id": "c1", "from": "d2a", "to": "pi-loop", "label": "对应", "variant": "dashed" },
-    { "id": "c2", "from": "d2a", "to": "pi-stream", "label": "callLLM", "variant": "dashed" },
-    { "id": "c3", "from": "d2a", "to": "pi-execute", "label": "tool.execute", "variant": "dashed" },
-    { "id": "c4", "from": "d2a", "to": "pi-finish", "label": "maxTurns", "variant": "dashed" },
-    { "id": "c5", "from": "pi-execute", "to": "pi-prepare", "variant": "default" },
-    { "id": "c6", "from": "pi-prepare", "to": "pi-run", "variant": "default" },
-    { "id": "c7", "from": "pi-run", "to": "pi-result", "variant": "default" }
+    { "id": "c1", "from": "d2a", "to": "pi-loop", "label": "对应·核心循环", "variant": "dashed" },
+    { "id": "c2", "from": "d2a", "to": "pi-stream", "label": "对应·callLLM", "variant": "dashed" },
+    { "id": "c3", "from": "d2a", "to": "pi-execute", "label": "对应·tool.execute", "variant": "dashed" },
+    { "id": "c4", "from": "d2a", "to": "pi-finish", "label": "对应·maxTurns", "variant": "dashed" },
+    { "id": "c5", "from": "pi-execute", "to": "pi-prepare", "label": "先", "variant": "default" },
+    { "id": "c6", "from": "pi-prepare", "to": "pi-run", "label": "再", "variant": "default" },
+    { "id": "c7", "from": "pi-run", "to": "pi-result", "label": "最后", "variant": "default" }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "骨架不变，逐环长大",
+      "title": "怎么读这张图",
       "items": [
-        "我们 20 行的每一步，pi 都拆成了一个专职函数",
-        "多出来的不是「更聪明」，是流式、校验、权限、并行这些生产必需"
+        "虚线 = 对应关系：我们 20 行里的每一步，pi 用哪个函数实现",
+        "pi 多出来的函数，把「执行工具」拆成三步：校验参数 → 真正执行 → 封装结果"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "为什么拆成 7 个",
+      "items": [
+        "流式输出：边生成边显示，不用干等",
+        "参数校验：模型给的参数不可信，先验再执行",
+        "权限检查：危险操作先拦截（下一章）",
+        "顺序/并行：多个工具能同时跑"
       ]
     }
   ]

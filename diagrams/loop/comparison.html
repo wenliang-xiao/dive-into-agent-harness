@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 3.0.1">
   <meta name="archify-reader-contract" content="declared-wide-v1">
-  <title>核心循环：我们 vs pi</title>
+  <title>我们 20 行 = pi 400 行的骨架</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -4978,9 +4978,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
            data-preset-badge-blueprint="蓝图 / 修订 01"
            data-preset-badge-editorial="编辑风格 / 现场笔记">
         <div class="pulse-dot"></div>
-        <h1>核心循环：我们 vs pi</h1>
+        <h1>我们 20 行 = pi 400 行的骨架</h1>
       </div>
-      <p class="subtitle">我们 1 个函数，pi 拆成 7 个协作函数</p>
+      <p class="subtitle">虚线是「对应关系」：我们的每一步，pi 用一个专职函数实现</p>
     </div>
 
 
@@ -4988,9 +4988,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / 图版 04">
-      <svg viewBox="0 0 910 634" role="img" lang="zh-CN" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
-        <title id="archify-diagram-title">核心循环：我们 vs pi</title>
-        <desc id="archify-diagram-description">我们 1 个函数，pi 拆成 7 个协作函数</desc>
+      <svg viewBox="0 0 950 634" role="img" lang="zh-CN" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
+        <title id="archify-diagram-title">我们 20 行 = pi 400 行的骨架</title>
+        <desc id="archify-diagram-description">虚线是「对应关系」：我们的每一步，pi 用一个专职函数实现</desc>
         <!-- Definitions -->
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -5014,160 +5014,169 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="我们的 20 行" x="40" y="270" width="210" height="110" rx="12" class="c-region" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="我们：从零实现" x="40" y="270" width="220" height="116" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="pi 的 400 行（agent-loop.ts）" x="350" y="100" width="520" height="466" rx="12" class="c-region" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="pi：生产级 agent-loop.ts" x="370" y="80" width="540" height="486" rx="12" class="c-region" stroke-width="1"/>
 
         <!-- Connection paths (before components for correct z-order) -->
         <g data-graph-role="automatic-crossover" style="--step:0">
-          <path data-graph-role="automatic-crossover-underlay" d="M 131 300 L 131 166 Q 131 158 139 158 L 380 158" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="d2a" data-edge-to="pi-loop" data-edge-label="对应" data-edge-key="0" data-edge-id="c1" data-composition-points="131,300;131,158;380,158" data-composition-crossover="halo" data-composition-independent="true" d="M 131 300 L 131 166 Q 131 158 139 158 L 380 158" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 136 300 L 136 146 Q 136 138 144 138 L 400 138" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="d2a" data-edge-to="pi-loop" data-edge-label="对应·核心循环" data-edge-key="0" data-edge-id="c1" data-composition-points="136,300;136,138;400,138" data-composition-crossover="halo" data-composition-independent="true" d="M 136 300 L 136 146 Q 136 138 144 138 L 400 138" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:1">
-          <path data-graph-role="automatic-crossover-underlay" d="M 220 330 L 334 330 Q 342 330 342 322 L 342 276 Q 342 268 350 268 L 380 268" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="d2a" data-edge-to="pi-stream" data-edge-label="callLLM" data-edge-key="1" data-edge-id="c2" data-composition-points="220,330;342,330;342,268;380,268" data-composition-crossover="halo" data-composition-independent="true" d="M 220 330 L 334 330 Q 342 330 342 322 L 342 276 Q 342 268 350 268 L 380 268" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 230 330 L 354 330 Q 362 330 362 322 L 362 266 Q 362 258 370 258 L 400 258" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="d2a" data-edge-to="pi-stream" data-edge-label="对应·callLLM" data-edge-key="1" data-edge-id="c2" data-composition-points="230,330;362,330;362,258;400,258" data-composition-crossover="halo" data-composition-independent="true" d="M 230 330 L 354 330 Q 362 330 362 322 L 362 266 Q 362 258 370 258 L 400 258" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:2">
-          <path data-graph-role="automatic-crossover-underlay" d="M 70 330 L 54 330 Q 46 330 46 338 L 46 370 Q 46 378 54 378 L 380 378" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="d2a" data-edge-to="pi-execute" data-edge-label="tool.execute" data-edge-key="2" data-edge-id="c3" data-composition-points="70,330;46,330;46,378;380,378" data-composition-crossover="halo" data-composition-independent="true" d="M 70 330 L 54 330 Q 46 330 46 338 L 46 370 Q 46 378 54 378 L 380 378" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 70 333 L 54 333 Q 46 333 46 341 L 46 370 Q 46 378 54 378 L 400 378" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="d2a" data-edge-to="pi-execute" data-edge-label="对应·tool.execute" data-edge-key="2" data-edge-id="c3" data-composition-points="70,333;46,333;46,378;400,378" data-composition-crossover="halo" data-composition-independent="true" d="M 70 333 L 54 333 Q 46 333 46 341 L 46 370 Q 46 378 54 378 L 400 378" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:3">
-          <path data-graph-role="automatic-crossover-underlay" d="M 220 344 L 292 344 Q 300 344 300 352 L 300 480 Q 300 488 308 488 L 380 488" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="d2a" data-edge-to="pi-finish" data-edge-label="maxTurns" data-edge-key="3" data-edge-id="c4" data-composition-points="220,344;300,344;300,488;380,488" data-composition-crossover="halo" data-composition-independent="true" d="M 220 344 L 292 344 Q 300 344 300 352 L 300 480 Q 300 488 308 488 L 380 488" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 230 350 L 307 350 Q 315 350 315 358 L 315 490 Q 315 498 323 498 L 400 498" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="d2a" data-edge-to="pi-finish" data-edge-label="对应·maxTurns" data-edge-key="3" data-edge-id="c4" data-composition-points="230,350;315,350;315,498;400,498" data-composition-crossover="halo" data-composition-independent="true" d="M 230 350 L 307 350 Q 315 350 315 358 L 315 490 Q 315 498 323 498 L 400 498" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:4">
-          <path data-graph-role="automatic-crossover-underlay" d="M 540 378 L 592 378 Q 600 378 600 370 L 600 326 Q 600 318 608 318 L 660 318" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="pi-execute" data-edge-to="pi-prepare" data-edge-key="4" data-edge-id="c5" data-composition-points="540,378;600,378;600,318;660,318" data-composition-crossover="halo" data-composition-independent="true" d="M 540 378 L 592 378 Q 600 378 600 370 L 600 326 Q 600 318 608 318 L 660 318" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 580 378 L 622 378 Q 630 378 630 370 L 630 326 Q 630 318 638 318 L 680 318" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="pi-execute" data-edge-to="pi-prepare" data-edge-label="先" data-edge-key="4" data-edge-id="c5" data-composition-points="580,378;630,378;630,318;680,318" data-composition-crossover="halo" data-composition-independent="true" d="M 580 378 L 622 378 Q 630 378 630 370 L 630 326 Q 630 318 638 318 L 680 318" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:5">
-          <path data-graph-role="automatic-crossover-underlay" d="M 740 346 L 740 390" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="pi-prepare" data-edge-to="pi-run" data-edge-key="5" data-edge-id="c6" data-composition-points="740,346;740,390" data-composition-crossover="halo" data-composition-independent="true" d="M 740 346 L 740 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 780 346 L 780 390" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="pi-prepare" data-edge-to="pi-run" data-edge-label="再" data-edge-key="5" data-edge-id="c6" data-composition-points="780,346;780,390" data-composition-crossover="halo" data-composition-independent="true" d="M 780 346 L 780 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:6">
-          <path data-graph-role="automatic-crossover-underlay" d="M 745 446 L 745 490" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="pi-run" data-edge-to="pi-result" data-edge-key="6" data-edge-id="c7" data-composition-points="745,446;745,490" data-composition-crossover="halo" data-composition-independent="true" d="M 745 446 L 745 490" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 780 446 L 780 490" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="pi-run" data-edge-to="pi-result" data-edge-label="最后" data-edge-key="6" data-edge-id="c7" data-composition-points="780,446;780,490" data-composition-crossover="halo" data-composition-independent="true" d="M 780 446 L 780 490" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
 
         <!-- Components -->
-        <g id="node-d2a" data-node-id="d2a" data-node-label="runLoop" tabindex="0" role="button" aria-label="聚焦runLoop，我们：20 行全在这, 我们的 20 行" aria-pressed="false" data-node-kind="backend" data-node-sublabel="我们：20 行全在这" data-node-tag="从零实现" data-node-context="我们的 20 行">
-          <title>runLoop · 我们：20 行全在这 · 我们的 20 行 · 从零实现</title>
-          <rect x="70" y="300" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="70" y="300" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+        <g id="node-d2a" data-node-id="d2a" data-node-label="runLoop（我们）" tabindex="0" role="button" aria-label="聚焦runLoop（我们），20 行：循环+调模型+执行+回填, 我们：从零实现" aria-pressed="false" data-node-kind="backend" data-node-sublabel="20 行：循环+调模型+执行+回填" data-node-tag="从零实现" data-node-context="我们：从零实现">
+          <title>runLoop（我们） · 20 行：循环+调模型+执行+回填 · 我们：从零实现 · 从零实现</title>
+          <rect x="70" y="300" width="160" height="66" rx="6" class="c-mask"/>
+          <rect x="70" y="300" width="160" height="66" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(76 306) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="145" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">runLoop</text>
-        <text data-detail="context" x="145" y="344" class="t-muted" font-size="9" text-anchor="middle">我们：20 行全在这</text>
-        <text data-detail="fine" x="145" y="352" class="t-backend" font-size="7" text-anchor="middle">从零实现</text>
+          <text data-node-label="" data-detail-anchor="" x="150" y="331" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">runLoop（我们）</text>
+        <text data-detail="context" x="150" y="347" class="t-muted" font-size="9" text-anchor="middle">20 行：循环+调模型+执行+回填</text>
+        <text data-detail="fine" x="150" y="358" class="t-backend" font-size="7" text-anchor="middle">从零实现</text>
         </g>
 
-        <g id="node-pi-loop" data-node-id="pi-loop" data-node-label="runLoop" tabindex="0" role="button" aria-label="聚焦runLoop，:157 主循环, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":157 主循环" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>runLoop · :157 主循环 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="380" y="130" width="150" height="56" rx="6" class="c-mask"/>
-          <rect x="380" y="130" width="150" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(386 136) scale(0.6875)">
+        <g id="node-pi-loop" data-node-id="pi-loop" data-node-label="runLoop" tabindex="0" role="button" aria-label="聚焦runLoop，主循环·调度这一切, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="主循环·调度这一切" data-node-context="pi：生产级 agent-loop.ts">
+          <title>runLoop · 主循环·调度这一切 · pi：生产级 agent-loop.ts</title>
+          <rect x="400" y="110" width="160" height="56" rx="6" class="c-mask"/>
+          <rect x="400" y="110" width="160" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(406 116) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="455" y="156" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">runLoop</text>
-        <text data-detail="context" x="455" y="172" class="t-muted" font-size="9" text-anchor="middle">:157 主循环</text>
+          <text data-node-label="" data-detail-anchor="" x="480" y="136" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">runLoop</text>
+        <text data-detail="context" x="480" y="152" class="t-muted" font-size="9" text-anchor="middle">主循环·调度这一切</text>
         </g>
 
-        <g id="node-pi-stream" data-node-id="pi-stream" data-node-label="streamAssistantResponse" tabindex="0" role="button" aria-label="聚焦streamAssistantResponse，:381 流式输出, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":381 流式输出" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>streamAssistantResponse · :381 流式输出 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="380" y="240" width="170" height="56" rx="6" class="c-mask"/>
-          <rect x="380" y="240" width="170" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(386 246) scale(0.6875)">
+        <g id="node-pi-stream" data-node-id="pi-stream" data-node-label="streamAssistantResponse" tabindex="0" role="button" aria-label="聚焦streamAssistantResponse，调模型·流式输出, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="调模型·流式输出" data-node-context="pi：生产级 agent-loop.ts">
+          <title>streamAssistantResponse · 调模型·流式输出 · pi：生产级 agent-loop.ts</title>
+          <rect x="400" y="230" width="190" height="56" rx="6" class="c-mask"/>
+          <rect x="400" y="230" width="190" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(406 236) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="465" y="266" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">streamAssistantResponse</text>
-        <text data-detail="context" x="465" y="282" class="t-muted" font-size="9" text-anchor="middle">:381 流式输出</text>
+          <text data-node-label="" data-detail-anchor="" x="495" y="256" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">streamAssistantResponse</text>
+        <text data-detail="context" x="495" y="272" class="t-muted" font-size="9" text-anchor="middle">调模型·流式输出</text>
         </g>
 
-        <g id="node-pi-execute" data-node-id="pi-execute" data-node-label="executeToolCalls" tabindex="0" role="button" aria-label="聚焦executeToolCalls，:508 执行工具, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":508 执行工具" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>executeToolCalls · :508 执行工具 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="380" y="350" width="160" height="56" rx="6" class="c-mask"/>
-          <rect x="380" y="350" width="160" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(386 356) scale(0.6875)">
+        <g id="node-pi-execute" data-node-id="pi-execute" data-node-label="executeToolCalls" tabindex="0" role="button" aria-label="聚焦executeToolCalls，执行工具·顺序/并行, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="执行工具·顺序/并行" data-node-context="pi：生产级 agent-loop.ts">
+          <title>executeToolCalls · 执行工具·顺序/并行 · pi：生产级 agent-loop.ts</title>
+          <rect x="400" y="350" width="180" height="56" rx="6" class="c-mask"/>
+          <rect x="400" y="350" width="180" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(406 356) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="460" y="376" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">executeToolCalls</text>
-        <text data-detail="context" x="460" y="392" class="t-muted" font-size="9" text-anchor="middle">:508 执行工具</text>
+          <text data-node-label="" data-detail-anchor="" x="490" y="376" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">executeToolCalls</text>
+        <text data-detail="context" x="490" y="392" class="t-muted" font-size="9" text-anchor="middle">执行工具·顺序/并行</text>
         </g>
 
-        <g id="node-pi-finish" data-node-id="pi-finish" data-node-label="finishTurn" tabindex="0" role="button" aria-label="聚焦finishTurn，:286 判断结束, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":286 判断结束" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>finishTurn · :286 判断结束 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="380" y="460" width="150" height="56" rx="6" class="c-mask"/>
-          <rect x="380" y="460" width="150" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(386 466) scale(0.6875)">
+        <g id="node-pi-finish" data-node-id="pi-finish" data-node-label="finishTurn" tabindex="0" role="button" aria-label="聚焦finishTurn，判断继续/结束, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="判断继续/结束" data-node-context="pi：生产级 agent-loop.ts">
+          <title>finishTurn · 判断继续/结束 · pi：生产级 agent-loop.ts</title>
+          <rect x="400" y="470" width="160" height="56" rx="6" class="c-mask"/>
+          <rect x="400" y="470" width="160" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(406 476) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="455" y="486" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">finishTurn</text>
-        <text data-detail="context" x="455" y="502" class="t-muted" font-size="9" text-anchor="middle">:286 判断结束</text>
+          <text data-node-label="" data-detail-anchor="" x="480" y="496" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">finishTurn</text>
+        <text data-detail="context" x="480" y="512" class="t-muted" font-size="9" text-anchor="middle">判断继续/结束</text>
         </g>
 
-        <g id="node-pi-prepare" data-node-id="pi-prepare" data-node-label="prepareToolCall" tabindex="0" role="button" aria-label="聚焦prepareToolCall，:708 校验+权限, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":708 校验+权限" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>prepareToolCall · :708 校验+权限 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="660" y="290" width="160" height="56" rx="6" class="c-mask"/>
-          <rect x="660" y="290" width="160" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(666 296) scale(0.6875)">
+        <g id="node-pi-prepare" data-node-id="pi-prepare" data-node-label="prepareToolCall" tabindex="0" role="button" aria-label="聚焦prepareToolCall，找工具+校验参数+权限检查, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="找工具+校验参数+权限检查" data-node-context="pi：生产级 agent-loop.ts">
+          <title>prepareToolCall · 找工具+校验参数+权限检查 · pi：生产级 agent-loop.ts</title>
+          <rect x="680" y="290" width="200" height="56" rx="6" class="c-mask"/>
+          <rect x="680" y="290" width="200" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(686 296) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="740" y="316" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">prepareToolCall</text>
-        <text data-detail="context" x="740" y="332" class="t-muted" font-size="9" text-anchor="middle">:708 校验+权限</text>
+          <text data-node-label="" data-detail-anchor="" x="780" y="316" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">prepareToolCall</text>
+        <text data-detail="context" x="780" y="332" class="t-muted" font-size="9" text-anchor="middle">找工具+校验参数+权限检查</text>
         </g>
 
-        <g id="node-pi-run" data-node-id="pi-run" data-node-label="executePreparedToolCall" tabindex="0" role="button" aria-label="聚焦executePreparedToolCall，:821 真执行, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":821 真执行" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>executePreparedToolCall · :821 真执行 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="660" y="390" width="170" height="56" rx="6" class="c-mask"/>
-          <rect x="660" y="390" width="170" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(666 396) scale(0.6875)">
+        <g id="node-pi-run" data-node-id="pi-run" data-node-label="executePreparedToolCall" tabindex="0" role="button" aria-label="聚焦executePreparedToolCall，真正调用 tool.execute, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="真正调用 tool.execute" data-node-context="pi：生产级 agent-loop.ts">
+          <title>executePreparedToolCall · 真正调用 tool.execute · pi：生产级 agent-loop.ts</title>
+          <rect x="680" y="390" width="200" height="56" rx="6" class="c-mask"/>
+          <rect x="680" y="390" width="200" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(686 396) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="745" y="416" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">executePreparedToolCall</text>
-        <text data-detail="context" x="745" y="432" class="t-muted" font-size="9" text-anchor="middle">:821 真执行</text>
+          <text data-node-label="" data-detail-anchor="" x="780" y="416" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">executePreparedToolCall</text>
+        <text data-detail="context" x="780" y="432" class="t-muted" font-size="9" text-anchor="middle">真正调用 tool.execute</text>
         </g>
 
-        <g id="node-pi-result" data-node-id="pi-result" data-node-label="createToolResultMessage" tabindex="0" role="button" aria-label="聚焦createToolResultMessage，:930 封装结果, pi 的 400 行（agent-loop.ts）" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":930 封装结果" data-node-context="pi 的 400 行（agent-loop.ts）">
-          <title>createToolResultMessage · :930 封装结果 · pi 的 400 行（agent-loop.ts）</title>
-          <rect x="660" y="490" width="180" height="56" rx="6" class="c-mask"/>
-          <rect x="660" y="490" width="180" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(666 496) scale(0.6875)">
+        <g id="node-pi-result" data-node-id="pi-result" data-node-label="createToolResultMessage" tabindex="0" role="button" aria-label="聚焦createToolResultMessage，把结果封装成消息, pi：生产级 agent-loop.ts" aria-pressed="false" data-node-kind="backend" data-node-sublabel="把结果封装成消息" data-node-context="pi：生产级 agent-loop.ts">
+          <title>createToolResultMessage · 把结果封装成消息 · pi：生产级 agent-loop.ts</title>
+          <rect x="680" y="490" width="190" height="56" rx="6" class="c-mask"/>
+          <rect x="680" y="490" width="190" height="56" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(686 496) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="750" y="516" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">createToolResultMessage</text>
-        <text data-detail="context" x="750" y="532" class="t-muted" font-size="9" text-anchor="middle">:930 封装结果</text>
+          <text data-node-label="" data-detail-anchor="" x="775" y="516" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">createToolResultMessage</text>
+        <text data-detail="context" x="775" y="532" class="t-muted" font-size="9" text-anchor="middle">把结果封装成消息</text>
         </g>
 
         <!-- Connection labels -->
-        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-loop" data-edge-label="对应" data-edge-key="0" data-edge-id="c1">
-          <rect x="240.5" y="138" width="30" height="14" rx="3" class="c-mask"/>
-          <text x="255.5" y="148" class="t-edge-dashed" font-size="8" text-anchor="middle">对应</text>
+        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-loop" data-edge-label="对应·核心循环" data-edge-key="0" data-edge-id="c1">
+          <rect x="231.8" y="118" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="268" y="128" class="t-edge-dashed" font-size="8" text-anchor="middle">对应·核心循环</text>
         </g>
-        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-stream" data-edge-label="callLLM" data-edge-key="1" data-edge-id="c2">
-          <rect x="320.2" y="279" width="43.6" height="14" rx="3" class="c-mask"/>
-          <text x="342" y="289" class="t-edge-dashed" font-size="8" text-anchor="middle">callLLM</text>
+        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-stream" data-edge-label="对应·callLLM" data-edge-key="1" data-edge-id="c2">
+          <rect x="328.2" y="274" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="362" y="284" class="t-edge-dashed" font-size="8" text-anchor="middle">对应·callLLM</text>
         </g>
-        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-execute" data-edge-label="tool.execute" data-edge-key="2" data-edge-id="c3">
-          <rect x="179.2" y="388" width="67.6" height="14" rx="3" class="c-mask"/>
-          <text x="213" y="398" class="t-edge-dashed" font-size="8" text-anchor="middle">tool.execute</text>
+        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-execute" data-edge-label="对应·tool.execute" data-edge-key="2" data-edge-id="c3">
+          <rect x="177.2" y="388" width="91.6" height="14" rx="3" class="c-mask"/>
+          <text x="223" y="398" class="t-edge-dashed" font-size="8" text-anchor="middle">对应·tool.execute</text>
         </g>
-        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-finish" data-edge-label="maxTurns" data-edge-key="3" data-edge-id="c4">
-          <rect x="275.8" y="396" width="48.4" height="14" rx="3" class="c-mask"/>
-          <text x="300" y="406" class="t-edge-dashed" font-size="8" text-anchor="middle">maxTurns</text>
+        <g data-detail="context" data-edge-from="d2a" data-edge-to="pi-finish" data-edge-label="对应·maxTurns" data-edge-key="3" data-edge-id="c4">
+          <rect x="278.8" y="404" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="315" y="414" class="t-edge-dashed" font-size="8" text-anchor="middle">对应·maxTurns</text>
         </g>
-
-
-
+        <g data-detail="context" data-edge-from="pi-execute" data-edge-to="pi-prepare" data-edge-label="先" data-edge-key="4" data-edge-id="c5">
+          <rect x="615" y="328" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="630" y="338" class="t-edge-default" font-size="8" text-anchor="middle">先</text>
+        </g>
+        <g data-detail="context" data-edge-from="pi-prepare" data-edge-to="pi-run" data-edge-label="再" data-edge-key="5" data-edge-id="c6">
+          <rect x="744" y="361" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="759" y="371" class="t-edge-default" font-size="8" text-anchor="middle">再</text>
+        </g>
+        <g data-detail="context" data-edge-from="pi-run" data-edge-to="pi-result" data-edge-label="最后" data-edge-key="6" data-edge-id="c7">
+          <rect x="744" y="461" width="30" height="14" rx="3" class="c-mask"/>
+          <text x="759" y="471" class="t-edge-default" font-size="8" text-anchor="middle">最后</text>
+        </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="我们的 20 行">
-          <rect data-graph-role="structural-frame-label-mask" x="44" y="280" width="74.8" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="48" y="293" class="t-cloud" font-size="9" font-weight="600">我们的 20 行</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="我们：从零实现">
+          <rect data-graph-role="structural-frame-label-mask" x="44" y="280" width="85.6" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="48" y="293" class="t-cloud" font-size="9" font-weight="600">我们：从零实现</text>
         </g>
 
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="pi 的 400 行（agent-loop.ts）">
-          <rect data-graph-role="structural-frame-label-mask" x="354" y="110" width="166.6" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="358" y="123" class="t-cloud" font-size="9" font-weight="600">pi 的 400 行（agent-loop.ts）</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="pi：生产级 agent-loop.ts">
+          <rect data-graph-role="structural-frame-label-mask" x="374" y="90" width="139.6" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="378" y="103" class="t-cloud" font-size="9" font-weight="600">pi：生产级 agent-loop.ts</text>
         </g>
 
         <!-- Legend -->
@@ -5357,11 +5366,24 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>骨架不变，逐环长大</h3>
+          <h3>怎么读这张图</h3>
         </div>
         <ul>
-          <li>我们 20 行的每一步，pi 都拆成了一个专职函数</li>
-          <li>多出来的不是「更聪明」，是流式、校验、权限、并行这些生产必需</li>
+          <li>虚线 = 对应关系：我们 20 行里的每一步，pi 用哪个函数实现</li>
+          <li>pi 多出来的函数，把「执行工具」拆成三步：校验参数 → 真正执行 → 封装结果</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>为什么拆成 7 个</h3>
+        </div>
+        <ul>
+          <li>流式输出：边生成边显示，不用干等</li>
+          <li>参数校验：模型给的参数不可信，先验再执行</li>
+          <li>权限检查：危险操作先拦截（下一章）</li>
+          <li>顺序/并行：多个工具能同时跑</li>
         </ul>
       </div>
     </div>
