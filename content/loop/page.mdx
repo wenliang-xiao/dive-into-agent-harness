@@ -165,6 +165,12 @@ async function runLoop(...) {
 
 ### 逐块对比：具体差在哪
 
+先看全局：我们 1 个函数，pi 拆成了 7 个协作函数，虚线标出每一块的对应关系：
+
+<DiagramFrame src="/diagram/loop/comparison.html" title="我们 vs pi：骨架不变，逐环长大（可交互）" />
+
+再看逐块的细节：
+
 | 环节 | 我们写的 | pi 的实现 | **具体区别** |
 |------|---------|-----------|-------------|
 | 循环结构 | 一个 `for` | 双层 `while`（`:179`/`:183`） | 内层是核心循环；外层额外处理「用户中途插话」——真实对话里用户会打断 agent |
@@ -235,6 +241,4 @@ export const loopParams = [
 
 ## 延伸阅读
 
-- [d2a-harness step-01 完整代码](./d2a-harness/src/step-01-loop/)——本章从零实现的完整源码，跟着跑一遍。
-- [pi 的 agent-loop.ts](https://github.com/wenliang-xiao/pi/blob/main/packages/agent/src/agent-loop.ts)——本章基准，`runLoop` 从 `:179` 读起。
-- 《动手学深度学习》第 4 章「线性回归」——D2L 也是从「最简模型」起步，本章是 agent 版的「线性回归」。
+（章节链接待全书完成后统一补充）
