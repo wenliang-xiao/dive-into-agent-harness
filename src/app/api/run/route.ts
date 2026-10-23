@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   const {
     baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns,
     requiredField, paramType, maxTokens, buffer, keepRecent,
+    blockedTool, blockedPattern,
   } = body ?? {};
 
   if (!request || typeof request !== "string") {
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
             maxTokens: maxTokens ? Number(maxTokens) : undefined,
             buffer: buffer ? Number(buffer) : undefined,
             keepRecent: keepRecent ? Number(keepRecent) : undefined,
+            blockedTool: blockedTool || undefined,
+            blockedPattern: blockedPattern || undefined,
           },
           send,
         );

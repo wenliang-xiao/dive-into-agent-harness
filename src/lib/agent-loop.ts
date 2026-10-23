@@ -38,6 +38,10 @@ export type RunConfig = {
   buffer?: number;
   /** 压缩时保留最近几条 */
   keepRecent?: number;
+  /** 拦截的工具名（实验：观察 block 后模型调整） */
+  blockedTool?: string;
+  /** 参数黑名单：包含即拦 */
+  blockedPattern?: string;
 };
 
 export type TraceEvent =
@@ -147,6 +151,13 @@ export async function runLoop(
       let result: string;
       if (!tool) {
         result = `错误：未知工具 ${tc.function.name}`;
+      } else if (config.blockedTool && tc.function.name === config.blockedTool) {
+        result = `被拦截：工具 ${tc.function.name} 被禁`;
+      } else if (
+        config.blockedPattern &&
+        tc.function.arguments.includes(config.blockedPattern)
+      ) {
+        result = `被拦截：参数命中黑名单`;
       } else {
         try {
           result = String(await tool.execute(JSON.parse(tc.function.arguments)));
