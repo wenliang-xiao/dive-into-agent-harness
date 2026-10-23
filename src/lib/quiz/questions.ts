@@ -162,12 +162,48 @@ const sandboxQuestions: Question[] = [
   },
 ];
 
+const multiagentQuestions: Question[] = [
+  {
+    id: "multiagent-1",
+    type: "single",
+    prompt: "Claude Code 的 Coordinator Mode 里，协调者用哪个工具派发新 worker？",
+    options: ["AgentTool", "Bash", "FileEdit", "Grep"],
+    answer: [0],
+    explain: "协调者的工具集是管理类：AgentTool（派发 worker）、SendMessageTool（发指令）、TaskStopTool（停掉 worker）。",
+  },
+  {
+    id: "multiagent-2",
+    type: "single",
+    prompt: "「Prompt 即编排」是什么意思？",
+    options: [
+      "多 agent 的编排逻辑写在 system prompt 指令里，而不是代码 DAG",
+      "用 prompt 生成代码",
+      "把 prompt 存到数据库",
+    ],
+    answer: [0],
+    explain: "cc 的协调者靠 prompt 里的指令（如「不要串行化可并行的任务」）来调度 worker，而非确定性的代码逻辑。",
+  },
+  {
+    id: "multiagent-3",
+    type: "single",
+    prompt: "为什么 subagent / worker 用「独立 loop、完全隔离的上下文」？",
+    options: [
+      "避免子任务的细节污染主上下文，各自独立、不互相干扰",
+      "为了多收 API 费用",
+      "因为模型不支持长上下文",
+    ],
+    answer: [0],
+    explain: "隔离上下文 = 子 agent 的探索、试错、中间过程都在自己的窗口里，主 agent 只拿到结论，避免 Context Rot。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
   { chapterSlug: "tools", questions: toolsQuestions },
   { chapterSlug: "context", questions: contextQuestions },
   { chapterSlug: "sandbox", questions: sandboxQuestions },
+  { chapterSlug: "multiagent", questions: multiagentQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
