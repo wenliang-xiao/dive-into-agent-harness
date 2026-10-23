@@ -15,3 +15,11 @@
 | 沙箱 | sandbox | 隔离的执行环境，限制 agent 的破坏性操作（改文件/跑命令）。 |
 | 子智能体 | subagent | 主 agent 派生出来、执行独立子任务的 agent。 |
 | 上下文工程 | context engineering | 系统性地设计「往模型里塞什么、什么时候压缩」的工程方法。 |
+| 上下文腐烂 | context rot | 上下文窗口塞得越满，模型准确回忆其中信息的能力越下降。 |
+| 令牌 | token | 模型处理文本的最小单位，窗口大小以 token 计。 |
+| 提示缓存 | prompt cache | 模型 API 对重复的消息前缀做缓存，命中后省时省钱。压缩时需「替换而非删除」以保护它。 |
+| 引导消息 | steering message | 用户或系统在 agent 运行中途插入的新消息，会打断当前循环。 |
+| 首令牌时间 | TTFT | Time To First Token，模型开始输出第一个 token 的延迟，影响「响应感」。 |
+| 模型上下文协议 | MCP | Model Context Protocol，连接外部工具/数据源的标准协议。 |
+| 链路追踪 | trace | 记录一次 agent 请求的完整调用链（循环、工具、token 用量），用于定位问题。 |
+| 可观测性 | telemetry / observability | 运行时打点（耗时、token、工具调用），用于定位「哪一环慢/错」。 |

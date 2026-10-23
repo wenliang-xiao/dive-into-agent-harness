@@ -7,15 +7,29 @@
 
 ## 为什么做这个
 
-大家并不熟悉 agent harness，导致用 LLM 效率不高——不管是个人开发，还是云端 agent。本书严格基于**真实主流 harness 源码**（opencode / codex / Claude Code / pi / durable-harness / openclaw 等）系统讲解，让你真正理解 agent 是怎么被「套起来驾驭」的。
+大家并不熟悉 agent harness，导致用 LLM 效率不高——不管是个人开发，还是云端 agent。本书严格基于**真实主流 harness 源码**（opencode / codex / Claude Code / pi / deepseek-harness / corojaw / qwen-audio-agent 等）系统讲解，让你真正理解 agent 是怎么被「套起来驾驭」的。
 
 ## 特性
 
-- 📖 **书**：对标 D2L 的递进式结构（核心循环 → 工具调用 → 上下文 → 沙箱 → 多 agent → 评测 → 前沿）
+- 📖 **全书 8 章**：对标 D2L 的递进式结构（引言 → 核心循环 → 工具调用 → 上下文 → 沙箱 → 多 agent → 评测 → 前沿）
 - 🧩 **分层表达**：每个概念覆盖直觉层（无代码图示）/ 机制层（核心代码）/ 源码层（真实 harness 精读）
-- 🎨 **可探索图解**：archify 产出的交互式 HTML 图，深/浅主题、可导出
-- ✅ **刷题**：多邻国式即时反馈 + 粉笔式题库/错题本/解析
+- 🎨 **可探索图解**：8 张 archify 交互式 HTML 图（lifecycle / workflow / architecture），深/浅主题、可导出
+- ✅ **刷题闭环**：24 道题，多邻国式即时反馈 + 粉笔式错题本 + 连续打卡 + 学习进度
+- 🔍 **源码溯源**：每个结论追到 `文件:行号`（pi / deepseek-harness 源码 + cc source map 还原）
 - 🚀 **可运行**：演示代码 + 真实源码 trace，边学边练
+
+## 章节
+
+| # | 章节 | 主案例 |
+|---|------|--------|
+| 0 | 引言：什么是 agent harness | — |
+| 1 | 核心循环 | opencode |
+| 2 | 工具调用 | codex |
+| 3 | 上下文与记忆 | cc（Claude Code） |
+| 4 | 沙箱与安全 | codex |
+| 5 | 多 agent 编排 | opencode |
+| 6 | 评测与可观测 | deepseek-harness |
+| 7 | 前沿与生产 | xiaoaiclaw / coro |
 
 ## 快速开始
 
@@ -24,14 +38,20 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
+本地不设 `DATABASE_URL` 时，刷题数据存本地 SQLite（`data/d2a.db`）。
+
+## 部署
+
+见 [DEPLOY.md](./DEPLOY.md)——Vercel 一键部署 + Turso 托管数据库 + 绑定 `d2a.ai`。
+
 ## 目录结构
 
 ```text
-content/            # 章节（MDX，七段式结构）
-src/                # 书站前端（Next.js）
-lib/store/          # 刷题数据层（Drizzle + SQLite）
-diagrams/           # archify 可探索图
-openspec/           # 单一事实来源（规格 / 变更 / 术语表）
+content/            # 章节（MDX，七段式结构）+ 术语表
+src/                # 书站前端（Next.js）+ 数据层 + API
+diagrams/           # archify 可探索图（candidate + 产物）
+openspec/           # 单一事实来源（规格 / 决策 / 变更）
+scripts/            # 工具脚本（视觉验证等）
 ```
 
 ## 贡献
