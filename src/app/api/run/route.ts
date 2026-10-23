@@ -7,8 +7,10 @@ import { runLoop, calculatorTool, type Tool } from "@/lib/agent-loop";
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
-  const { baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns, requiredField, paramType } =
-    body ?? {};
+  const {
+    baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns,
+    requiredField, paramType, maxTokens, buffer, keepRecent,
+  } = body ?? {};
 
   if (!request || typeof request !== "string") {
     return new Response(JSON.stringify({ error: "缺少请求内容 request" }), {
@@ -44,7 +46,16 @@ export async function POST(req: Request) {
         await runLoop(
           request,
           tools,
-          { baseUrl, apiKey, model, systemPrompt, maxTurns: maxTurns ?? 10 },
+          {
+            baseUrl,
+            apiKey,
+            model,
+            systemPrompt,
+            maxTurns: maxTurns ?? 10,
+            maxTokens: maxTokens ? Number(maxTokens) : undefined,
+            buffer: buffer ? Number(buffer) : undefined,
+            keepRecent: keepRecent ? Number(keepRecent) : undefined,
+          },
           send,
         );
       } catch (e) {
