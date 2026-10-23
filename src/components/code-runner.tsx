@@ -12,6 +12,7 @@ export type TraceEvent =
   | { type: "tool_result"; turn: number; result: string }
   | { type: "done"; answer: string }
   | { type: "max_turns_reached" }
+  | { type: "benchmark"; elapsed: number; pass: boolean }
   | { type: "error"; message: string };
 
 /** 一个可编辑的实验参数 */
@@ -169,6 +170,11 @@ function TraceLog({ events }: { events: TraceEvent[] }) {
           )}
           {e.type === "done" && <p className="font-bold text-ok">✅ L10 返回最终答案: {e.answer}</p>}
           {e.type === "max_turns_reached" && <p className="text-warn">⚠️ L17 达到轮数上限</p>}
+          {e.type === "benchmark" && (
+            <p className={e.pass ? "font-bold text-ok" : "font-bold text-danger"}>
+              {e.pass ? "✅" : "❌"} 耗时 {e.elapsed}ms
+            </p>
+          )}
           {e.type === "error" && <p className="text-danger">❌ {e.message}</p>}
         </div>
       ))}

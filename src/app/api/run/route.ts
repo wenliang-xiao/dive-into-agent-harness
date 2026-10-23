@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const {
     baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns,
     requiredField, paramType, maxTokens, buffer, keepRecent,
-    blockedTool, blockedPattern, subtasks, parallel, subtask1, subtask2,
+    blockedTool, blockedPattern, subtasks, parallel, subtask1, subtask2, budget,
   } = body ?? {};
 
   const taskList: string[] = Array.isArray(subtasks)
@@ -47,6 +47,7 @@ export async function POST(req: Request) {
           new TextEncoder().encode(`data: ${JSON.stringify(e)}\n\n`),
         );
       try {
+        const start = performance.now();
         if (taskList.length > 0) {
           await runCoordinator(
             taskList,
@@ -72,6 +73,10 @@ export async function POST(req: Request) {
             },
             send,
           );
+        }
+        const elapsed = Math.round(performance.now() - start);
+        if (budget !== undefined) {
+          send({ type: "benchmark", elapsed, pass: elapsed < Number(budget) });
         }
       } catch (e) {
         send({
