@@ -50,6 +50,8 @@ export type TraceEvent =
   | { type: "tool_call"; turn: number; name: string; args: string }
   | { type: "tool_result"; turn: number; result: string }
   | { type: "compact"; turn: number; tokens: number; window: number; dropped: number }
+  | { type: "worker_start"; index: number; task: string }
+  | { type: "worker_done"; index: number; conclusion: string }
   | { type: "done"; answer: string }
   | { type: "max_turns_reached" };
 
@@ -172,6 +174,39 @@ export async function runLoop(
 
   onEvent?.({ type: "max_turns_reached" });
   return messages;
+}
+
+/** 协调者：拆任务 → 派发 worker（每个 worker 独立上下文）→ 汇总 */
+export async function runCoordinator(
+  subtasks: string[],
+  tools: Tool[],
+  config: RunConfig & { parallel?: boolean },
+  onEvent?: (e: TraceEvent) => void,
+): Promise<string[]> {
+  const run = async (task: string, index: number) => {
+    onEvent?.({ type: "worker_start", index, task });
+    const msgs = await runLoop(
+      task,
+      tools,
+      {
+        ...config,
+        systemPrompt: "你是专注执行子任务的 worker，完成后只返回结论，不要解释过程。",
+      },
+      undefined, // worker 内部 trace 不转发，隔离上下文
+    );
+    const conclusion = msgs.at(-1)?.content ?? "";
+    onEvent?.({ type: "worker_done", index, conclusion });
+    return conclusion;
+  };
+
+  if (config.parallel === false) {
+    const results: string[] = [];
+    for (let i = 0; i < subtasks.length; i++) {
+      results.push(await run(subtasks[i], i));
+    }
+    return results;
+  }
+  return Promise.all(subtasks.map((t, i) => run(t, i)));
 }
 
 /** 教学用工具：计算器（白名单正则防注入） */

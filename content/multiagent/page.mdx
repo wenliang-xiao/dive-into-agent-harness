@@ -1,5 +1,6 @@
 import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
+import { CodeRunner } from "@/components/code-runner";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("multiagent");
@@ -8,10 +9,10 @@ export const questions = getQuestions("multiagent");
 
 前面五章，我们都在讲「一个 agent 干所有事」。但单 agent 有两个硬伤：
 
-- **上下文爆炸**：一个复杂任务要读几十个文件、跑几十次工具，中间过程全堆在同一个窗口里，很快 Context Rot。
-- **任务太杂**：既要调研、又要实现、还要验收，一个「大脑」来回切换，效率低、易分心。
+- **上下文爆炸**：复杂任务要读几十个文件、跑几十次工具，中间过程全堆在同一个窗口里，很快 Context Rot（第 4 章）。
+- **任务混杂**：既要调研、又要实现、还要验收，一个「大脑」来回切换，效率低、易分心。
 
-解法是把大任务**拆给多个 agent 并行干**——这就是多 agent 编排。它的核心价值就一句话：**把子任务的探索与中间过程隔离在独立上下文里，主 agent 只拿结论。**
+解法是把大任务**拆给多个 agent 并行干**。它的核心价值就一句话：**把子任务的探索与中间过程隔离在独立上下文里，主 agent 只拿结论。**
 
 ## 直觉层：包工头 + 工人
 
@@ -19,107 +20,123 @@ export const questions = getQuestions("multiagent");
 
 - 包工头接到「装修一套房」，**拆任务**：A 刷墙、B 铺地板、C 走水电。
 - 包工头**派活**给工人，工人各自在自己的工位干活，互不干扰。
-- 包工头**验收**：活干得不行就打回去重做，干错了就叫停。
-- 包工头自己不搬砖——他只做**拆解、派发、验收、纠偏**。
+- 包工头**验收**：活干得不行打回去重做，干错了叫停。
+- 包工头自己**不搬砖**——只做拆解、派发、验收、纠偏。
 
-工人的工位彼此独立（隔离的上下文），包工头不用知道每个工人的每一步，只知道「墙刷好了没有」。
+工人的工位彼此独立（隔离的上下文），包工头不知道每个工人的每一步，只知道「墙刷好了没有」。
 
-## 机制层：一个极简的 subagent 派发
+## 根源理解：Isolate 的落地
 
-用最少的代码表达这个模式——协调者把任务派给一个独立的 agent loop：
+回顾第 4 章的 Write / Select / Compress / **Isolate** 四策略。多 agent 就是 **Isolate（隔离）** 的落地：
+
+1. 单 agent 的上下文会爆（step-03 的 Context Rot）。
+2. 把子任务放进**独立的上下文**（独立的消息数组 = 独立状态），探索和试错留在子窗口里。
+3. 主 agent 只拿结论——`dispatchWorker` 返回的是 worker 的**最终输出**，不是全过程。
+
+这呼应 step-01 的结论：**消息数组 = agent 的状态**。既然每个 agent 的状态是独立的消息数组，那么「隔离上下文」就是「给每个 worker 一份独立的消息数组」。
+
+## 从零实现：协调者 + worker
+
+`d2a-harness/src/step-05-multiagent/`：
 
 ```ts
-// 协调者的核心：把子任务派发给一个独立 agent，只拿最终结论
-async function dispatchWorker(task: string): Promise<string> {
-  // 关键：worker 有自己独立的 messages（隔离的上下文）
-  const workerMessages: Message[] = [
-    { role: "system", content: "你是专注执行子任务的 worker，完成后只返回结论。" },
-    { role: "user", content: task },
-  ];
-
-  // worker 跑自己的完整 agent loop（就是第二章那个循环）
-  const conclusion = await agentLoop(workerMessages);
-
-  return conclusion; // 主 agent 只拿到结论，看不到 worker 的中间过程
+// worker：独立循环 + 独立上下文
+async function dispatchWorker(task, tools, config) {
+  return runAgent(
+    "你是专注执行子任务的 worker，完成后只返回结论。",  // 独立的 system
+    task,
+    tools,
+    config,          // worker 有自己的 messages，中间过程不外泄
+  );
 }
 
-// 协调者主循环：拆任务 → 派发 → 汇总
-async function coordinator(userRequest: string) {
-  const subtasks = await decompose(userRequest); // 拆成子任务
-  const results = await Promise.all(subtasks.map(dispatchWorker)); // 并行派发
-  return summarize(results); // 汇总
+// 协调者：拆任务 → 派发 → 汇总
+async function coordinator(subtasks, tools, config) {
+  const run = (task, i) => dispatchWorker(task, tools, config);
+
+  if (config.parallel === false) {
+    const results = [];
+    for (let i = 0; i < subtasks.length; i++) results.push(await run(subtasks[i], i));
+    return results;                       // 串行：一个接一个
+  }
+  return Promise.all(subtasks.map(run));  // 并行：同时跑
 }
 ```
 
 三个关键点：
 
 1. **worker 有独立 messages**——子任务的探索、试错都在自己的窗口里，不污染主上下文。
-2. **主 agent 只拿结论**——`dispatchWorker` 返回的是 worker 的最终输出，不是全过程。
-3. **并行**——互不依赖的子任务用 `Promise.all` 同时跑。
+2. **主 agent 只拿结论**——`dispatchWorker` 返回 worker 的最终输出，不是全过程。
+3. **并行 vs 串行**——互不依赖的子任务用 `Promise.all` 同时跑，有依赖则串行。
 
-<DiagramFrame src="/diagram/multiagent/coordinator.html" title="多 agent 编排：Coordinator（可交互）" />
+## 对照基准：Claude Code 的 Coordinator Mode
 
-## 源码层：Claude Code 的 Coordinator Mode
+> 说明：以下来自 source map 还原分析，标注「基于 source map 还原，非官方源码」。
 
-> 说明：以下来自 source map 还原分析（《Claude code 代码泄露》），标注「基于 source map 还原，非官方源码」。
-
-### 「Prompt 即编排」：编排算法是 prompt，不是代码
-
-cc 的多 agent 协调者有个令人意外的设计——**编排逻辑不是代码，而是 prompt**。传统系统用代码定义任务 DAG（依赖图），cc 把这些写进 system prompt 指令：
+cc 的多 agent 协调者有个惊人的设计——**编排逻辑不是代码，而是 prompt**。传统系统用代码定义任务 DAG，cc 把这些写进 system prompt 指令：
 
 | prompt 里的「编排指令」 | 传统系统的对应物 |
 |----------------------|----------------|
-| "Launch independent workers concurrently — don't serialize work" | 并行调度策略 |
-| "Read-only tasks run in parallel; Write-heavy tasks one at a time" | 并发控制 / 锁 |
-| "You must understand findings before directing follow-up work" | 任务间依赖管理 |
+| "Launch independent workers concurrently" | 并行调度策略 |
+| "Read-only tasks run in parallel; Write-heavy one at a time" | 并发控制 / 锁 |
 | "Do not rubber-stamp weak work" | 质量检查逻辑 |
 
 > "The multi-agent coordinator is interesting because the orchestration algorithm is a prompt, not code." — Alex Kim
 
-这意味着编排的可靠性**完全依赖模型的 instruction following 能力**，而非确定性代码。大胆，但有风险。
+协调者与 worker 通过**工具集隔离**实现分工：协调者只有管理类工具（`AgentTool` 派发、`SendMessageTool` 发指令、`TaskStopTool` 叫停），worker 只有执行类工具（Bash/FileEdit/Grep）。协调者**不能**改文件，worker **不能**派发 worker——职责通过工具集硬隔离。
 
-### 协调者与 worker 用不同的工具集
+一句话总结：我们写的「协调者 + worker + 独立上下文」，就是 cc Coordinator Mode 的骨架。cc 的特殊之处，是把「编排」本身也交给了 prompt（而非代码），并把分工硬编码进工具集。
 
-分工通过**工具集隔离**实现：
+## 实验：改并行/串行，观察 worker 调度
 
-```text
-协调者的工具（管理类）：
-├── AgentTool        — 派发新 worker
-├── SendMessageTool  — 给已有 worker 发后续指令
-└── TaskStopTool     — 停掉走错方向的 worker
+下面跑协调者派发两个 worker，改「并行 or 串行」观察 trace：
 
-Worker 的工具（执行类）：
-├── Bash / FileRead / FileEdit / Grep / Glob / MCP 工具（标准工具集）
-```
+export const maCode = [
+  "async function coordinator(subtasks, config) {",
+  "  const run = (task, i) => dispatchWorker(task, i);",
+  "  // 并行：同时派发所有 worker",
+  '  if ("[[parallel]]" === "true") {',
+  "    return Promise.all(subtasks.map(run));",
+  "  }",
+  "  // 串行：一个接一个",
+  "  const results = [];",
+  "  for (let i = 0; i < subtasks.length; i++) {",
+  "    results.push(await run(subtasks[i], i));",
+  "  }",
+  "  return results;",
+  "}",
+];
 
-协调者**不能**直接改文件（没有 FileEdit），worker **不能**派发新的 worker（没有 AgentTool）——职责通过工具集硬隔离。
+export const maParams = [
+  { key: "parallel", label: "parallel（true=并行 / false=串行）", type: "text", defaultValue: "true", hint: "实验：改成 false，观察 worker 一个接一个跑" },
+  { key: "subtask1", label: "子任务 1", type: "text", defaultValue: "帮我算 12*34 等于多少", hint: "派发给 worker 1" },
+  { key: "subtask2", label: "子任务 2", type: "text", defaultValue: "帮我算 56*78 等于多少", hint: "派发给 worker 2" },
+];
 
-### 上下文隔离是「Isolate」策略的落地
-
-回到上一章的 Write/Select/Compress/Isolate 四策略。多 agent 就是 **Isolate（隔离）** 的落地：把子任务放进独立 loop，上下文完全隔离。cc 官方表格把 SubAgents 的「上下文影响」标为**完全隔离**，与 Skills/MCP/Hooks 形成对照：
-
-| 维度 | SubAgents | 说明 |
-|------|-----------|------|
-| 扩展什么 | Claude 的**容量** | 突破单上下文能装下的工作量 |
-| 运行位置 | **独立 loop** | 自己的消息循环 |
-| 决策者 | 独立 LLM | 自己的模型实例 |
-
-> 对照 opencode：opencode 的 subagent 是同类机制——主 agent 通过工具派发子 agent，子 agent 有独立上下文，返回结构化结果。两者思路一致，cc 的特殊之处在于把「编排」本身也交给了 prompt。
+<CodeRunner
+  title="⚡ 实验：改并行/串行，观察 worker 调度"
+  codeLines={maCode}
+  highlightMap={{ worker_start: 4, worker_done: 6, model_call: 0, model_reply: 0, tool_call: 0, tool_result: 0, done: 0, max_turns_reached: 0 }}
+  params={maParams}
+  defaultRequest="（协调者模式：由子任务驱动）"
+/>
 
 ## 小结
 
-- 多 agent 解决单 agent 的**上下文爆炸**和**任务混杂**——核心价值是「隔离子任务上下文，主 agent 只拿结论」。
-- 协调者做**拆解、派发、验收、纠偏**，不自己搬砖。
-- 协调者与 worker 通过**工具集隔离**：管理类（AgentTool/SendMessageTool/TaskStopTool）vs 执行类（Bash/FileEdit/...）。
+- 多 agent 解决单 agent 的**上下文爆炸**和**任务混杂**——核心是「隔离子任务上下文，主 agent 只拿结论」。
+- 协调者做**拆解、派发、验收、纠偏**，不自己搬砖；worker 有独立的消息数组。
+- 协调者与 worker 通过**工具集隔离**：管理类 vs 执行类。
 - cc 的「**Prompt 即编排**」：编排算法写在 prompt 里，而非代码 DAG——大胆但有风险。
 - 多 agent 是上下文工程 **Isolate** 策略的落地。
 
-## 练习
+## 练习（动手）
+
+1. 给 `coordinator` 加「依赖」：子任务 3 依赖子任务 1、2 的结果，必须等它们完成再跑。
+2. 实现「验收」：worker 返回结论后，协调者用模型判断「干得好不好」，不好就重派。
+3. 对比「并行」和「串行」的耗时（用 `performance.now()` 计时）。
 
 <Quiz questions={questions} />
 
 ## 延伸阅读
 
-- 《Claude code 代码泄露》飞书文档——Coordinator Mode 与「Prompt 即编排」分析。
-- [How Claude Code Works](https://code.claude.com/docs/en/how-claude-code-works)——官方视角的 subagents / extensions 分层。
-- [opencode](https://github.com/sst/opencode)——subagent 机制的对照实现。
+（章节链接待全书完成后统一补充）

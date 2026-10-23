@@ -1,4 +1,4 @@
-import { runLoop, calculatorTool, type Tool } from "@/lib/agent-loop";
+import { runLoop, runCoordinator, calculatorTool, type Tool } from "@/lib/agent-loop";
 
 /**
  * 实验执行器后端：真实跑一遍核心循环，SSE 流式输出 trace。
@@ -10,11 +10,14 @@ export async function POST(req: Request) {
   const {
     baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns,
     requiredField, paramType, maxTokens, buffer, keepRecent,
-    blockedTool, blockedPattern,
+    blockedTool, blockedPattern, subtasks, parallel, subtask1, subtask2,
   } = body ?? {};
 
-  if (!request || typeof request !== "string") {
-    return new Response(JSON.stringify({ error: "缺少请求内容 request" }), {
+  const taskList: string[] = Array.isArray(subtasks)
+    ? subtasks.map(String)
+    : [subtask1, subtask2].filter((t) => typeof t === "string" && t);
+  if (!request && taskList.length === 0) {
+    return new Response(JSON.stringify({ error: "缺少请求内容 request 或子任务" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
@@ -44,23 +47,32 @@ export async function POST(req: Request) {
           new TextEncoder().encode(`data: ${JSON.stringify(e)}\n\n`),
         );
       try {
-        await runLoop(
-          request,
-          tools,
-          {
-            baseUrl,
-            apiKey,
-            model,
-            systemPrompt,
-            maxTurns: maxTurns ?? 10,
-            maxTokens: maxTokens ? Number(maxTokens) : undefined,
-            buffer: buffer ? Number(buffer) : undefined,
-            keepRecent: keepRecent ? Number(keepRecent) : undefined,
-            blockedTool: blockedTool || undefined,
-            blockedPattern: blockedPattern || undefined,
-          },
-          send,
-        );
+        if (taskList.length > 0) {
+          await runCoordinator(
+            taskList,
+            tools,
+            { baseUrl, apiKey, model, parallel: parallel !== false },
+            send,
+          );
+        } else {
+          await runLoop(
+            request,
+            tools,
+            {
+              baseUrl,
+              apiKey,
+              model,
+              systemPrompt,
+              maxTurns: maxTurns ?? 10,
+              maxTokens: maxTokens ? Number(maxTokens) : undefined,
+              buffer: buffer ? Number(buffer) : undefined,
+              keepRecent: keepRecent ? Number(keepRecent) : undefined,
+              blockedTool: blockedTool || undefined,
+              blockedPattern: blockedPattern || undefined,
+            },
+            send,
+          );
+        }
       } catch (e) {
         send({
           type: "error",
