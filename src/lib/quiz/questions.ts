@@ -96,10 +96,46 @@ const toolsQuestions: Question[] = [
   },
 ];
 
+const contextQuestions: Question[] = [
+  {
+    id: "context-1",
+    type: "single",
+    prompt: "「Context Rot（上下文腐烂）」指什么？",
+    options: [
+      "上下文窗口里的 token 越多，模型准确回忆信息的能力越下降",
+      "上下文里的文件被病毒破坏",
+      "模型输出的代码质量随时间下降",
+    ],
+    answer: [0],
+    explain: "Context Rot 是 Anthropic 提出的核心概念：窗口塞得越满，模型越难准确提取其中的关键信息。",
+  },
+  {
+    id: "context-2",
+    type: "single",
+    prompt: "Claude Code 的压缩是分档的，从轻到重依次是？",
+    options: [
+      "Snip（截断）→ Microcompact（瘦身）→ Context Collapse（折叠）→ Auto Compact（摘要）",
+      "直接删除所有历史消息",
+      "Auto Compact → Microcompact → Snip",
+    ],
+    answer: [0],
+    explain: "cc 用多档预警状态机：先截断超长历史，再瘦身工具结果，再折叠重复内容，最后才 fork 子 agent 做摘要。",
+  },
+  {
+    id: "context-3",
+    type: "multiple",
+    prompt: "Claude Code 的四层记忆架构包含哪几类？（可多选）",
+    options: ["user（用户画像）", "feedback（行为指导）", "project（项目动态）", "reference（外部指针）", "code（代码片段）"],
+    answer: [0, 1, 2, 3],
+    explain: "四类是 user/feedback/project/reference。注意：代码模式、git 历史、调试方案这类「能从项目状态推导出的信息」明确不保存。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
   { chapterSlug: "tools", questions: toolsQuestions },
+  { chapterSlug: "context", questions: contextQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {

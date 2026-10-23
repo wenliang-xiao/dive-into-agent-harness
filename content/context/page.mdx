@@ -1,15 +1,141 @@
-## 动机
+import { Quiz } from "@/components/quiz";
+import { getQuestions } from "@/lib/quiz/questions";
 
-（本章内容写作中）
+export const questions = getQuestions("context");
 
-## 直觉层
+## 动机：窗口有限，内容无限
 
-## 机制层
+前面两章里，我们把「消息」塞进上下文，模型就一直能「看到」历史。但现实有个硬约束：**上下文窗口是有限的**（几十万 token 封顶），而 agent 要处理的内容——代码、文件、工具结果、多轮历史——**无限增长**。
 
-## 源码层
+窗口塞满会怎样？Anthropic 给了一个词：**Context Rot（上下文腐烂）**：
+
+> 上下文里的 token 越多，模型准确回忆其中信息的能力就越下降。
+
+所以上下文管理不是「把东西都塞进去」，而是持续回答三个问题：**往窗口里写什么、写多少、满了之后丢掉什么**。这直接决定一个 agent 能跑多长、多准、多便宜——是 harness 效率的核心战场。
+
+## 直觉层：上下文是模型的「草稿纸」
+
+把上下文窗口想象成模型手边的一张**草稿纸**：
+
+- 模型边干活边在草稿纸上写：你的要求、它读过的文件、工具的结果、之前的想法。
+- 草稿纸**大小固定**。写得越满，模型越难从满纸字里找到关键信息（这就是 context rot）。
+- 快写满时，你得做选择：**擦掉不重要的**、**把一大段浓缩成一行摘要**、或者**把细节抄到别的地方，只留个「去哪里找」的索引**。
+
+Anthropic 把这套手艺总结成四个动作：**Write（写入）→ Select（挑选）→ Compress（压缩）→ Isolate（隔离）**。下面看真实实现怎么落地这四个动作。
+
+## 机制层：一个极简的压缩触发
+
+先看最朴素的逻辑——什么时候该压缩、压缩什么。简化到极致，是这样：
+
+```ts
+const WINDOW = 200_000;        // 模型窗口上限
+const BUFFER = 13_000;         // 预留余量，不贴着上限跑
+
+function needsCompact(messages: Message[], tokenCount: number): boolean {
+  return tokenCount > WINDOW - BUFFER; // 逼近上限才压缩
+}
+
+async function compact(messages: Message[]): Promise<Message[]> {
+  // 把最早的一大段历史，替换成一段摘要
+  const summary = await summarize(messages.slice(0, 100));
+  return [
+    { role: "system", content: "之前对话的摘要：" + summary },
+    ...messages.slice(100),
+  ];
+}
+```
+
+要点就两个：**留 buffer**（不贴着窗口上限跑，给模型输出留空间）、**用摘要替换而不是删除**（保住关键信息）。真实实现远比这精细——下面看 Claude Code 的五级状态机。
+
+## 源码层：Claude Code 的五级压缩与四层记忆
+
+> 说明：Claude Code 闭源，以下内容来自 source map 还原的源码分析（《Claude code 代码泄露》），标注「基于 source map 还原，非官方源码」。
+
+### 五级压缩：从轻到重
+
+cc 不是「满了就一次性压缩」，而是**多档预警状态机**，从最轻的动作开始，逐级加码：
+
+| 档位 | 源码 | 动作 |
+|------|------|------|
+| 1. Snip | `feature('HISTORY_SNIP')` | 截断超长历史消息，替换为 tombstone 标记 |
+| 2. Microcompact | `microCompact.ts`（530 行） | 对特定工具结果做「瘦身」——**替换而非删除**，保留结构、移除内容 |
+| 3. Context Collapse | `feature('CONTEXT_COLLAPSE')` | 把重复的文件读取/搜索结果折叠成摘要 |
+| 4. Auto Compact | `autoCompact.ts`（351 行）+ `compact.ts`（1705 行） | token 逼近上限时，fork 一个子 agent 生成对话摘要 |
+| 5. 组装请求 | `messages.ts` 的 `normalizeMessagesForAPI()` | 最终规范化消息格式 |
+
+每一档都有明确的常量（`autoCompact.ts`）：
+
+```ts
+const MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20_000;  // 摘要最长 2 万 token
+const AUTOCOMPACT_BUFFER_TOKENS = 13_000;      // 逼近上限的预留余量
+const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3; // 熔断器
+```
+
+最有意思的是**熔断器**背后的一段生产事故注释（`autoCompact.ts:68-70`）：
+
+```ts
+// BQ 2026-03-10: 1,279 sessions had 50+ consecutive failures (up to 3,272)
+// in a single session, wasting ~250K API calls/day globally.
+const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3
+```
+
+1279 个会话里，压缩失败后不断重试，一天浪费了 25 万次 API 调用。**三行代码止血**——连续失败 3 次就停。这是上下文工程在生产环境里真实面对的挑战：不是算法多高级，而是「失败时别死循环」。
+
+### Microcompact 的精细：替换而非删除
+
+为什么第 2 档要「替换而非删除」？因为 **prompt cache**。模型 API 会缓存消息前缀，删除中间一条消息会让后面的缓存全部失效。所以 Microcompact 有两条路径：
+
+- **时间路径**（缓存已过期）：直接改消息内容，替换成 `[Old tool result cleared]`。
+- **缓存路径**（缓存仍温热）：用 `cache_edits` API 移除结果，但不使缓存前缀失效。
+
+还要注意：**AgentTool 和 MCP 工具的结果不压缩**——子 agent 和外部工具的结果不可重现，删了信息就永久丢失。
+
+### 四层记忆：只存「推导不出来的东西」
+
+压缩解决「窗口内塞不下」，记忆解决「跨会话的持久化」。cc 的记忆系统（`memdir/memoryTypes.ts`）本质是**基于文件的分层指令系统**，不是向量数据库：
+
+| 类型 | 含义 | 示例 |
+|------|------|------|
+| **user** | 用户画像 | 「用户是数据科学家，首次接触 React」 |
+| **feedback** | 行为指导 | 「用户不要 trailing summary」 |
+| **project** | 项目动态 | 「3 月 5 日后冻结合并」 |
+| **reference** | 外部指针 | 「pipeline bugs 在 Linear INGEST 项目」 |
+
+一句话点破本质：**「CLAUDE.md is a collaboration contract, not a knowledge base」**。它明确**不保存**能从项目状态推导出的东西——代码模式（grep 可得）、git 历史（git log 可得）、调试方案（代码里有）。记忆只存「推导不出来」的隐性知识。
+
+### 自动记忆提取：五重门控 + 重叠保护
+
+记忆不是无限提取的。cc 用**五重门控**决定「该不该提取」，用**重叠保护**决定「现在能不能提取」：
+
+```text
+executeExtractMemoriesImpl() 入口
+├── ① 只有主 agent 提取（子 agent 是任务导向的，会产出噪声记忆）
+├── ② GrowthBook 远程开关开启（服务端可随时回滚/灰度）
+├── ③ 用户没禁用自动记忆（尊重 CLAUDE_CODE_DISABLE_AUTO_MEMORY）
+├── ④ 非远程模式（远程机器写入路径不对）
+└── ⑤ 没有正在进行的提取（inProgress）
+```
+
+重叠保护解决的是：提取是异步的（要调 API），但每轮都触发。用户连发 3 条消息，不加保护会同时跑 3 个提取 agent 写同一个 `MEMORY.md`。加了保护后，后面的请求被**暂存**，等当前提取完成后再「尾随提取」新消息。
+
+### 一个常被误解的点：CLAUDE.md 在哪注入
+
+社区常误解「CLAUDE.md 是 system prompt 的一部分」。实际实现是：CLAUDE.md 在**第一条 user message 的 `<system-reminder>` 里**，而不是 system prompt。system prompt 只放工具定义 + 基础指令（这部分跨轮次稳定，可以充分吃 prompt cache）。
 
 ## 小结
 
+- 上下文窗口有限，塞太满会 **Context Rot**；管理动作是 Write / Select / Compress / Isolate。
+- cc 用**五级压缩状态机**从轻到重：Snip → Microcompact → Context Collapse → Auto Compact，每级有熔断器防死循环。
+- 压缩要「替换而非删除」以保护 prompt cache；子 agent 和 MCP 结果不压缩。
+- 记忆是**基于文件的指令系统**，只存「推导不出来」的 user / feedback / project / reference 四类。
+- 自动记忆提取靠**五重门控 + 重叠保护 + 权限矩阵**三层约束，既可靠又安全。
+
 ## 练习
 
+<Quiz questions={questions} />
+
 ## 延伸阅读
+
+- 《Claude code 代码泄露》飞书文档——本章源码层的主素材（source map 还原分析）。
+- [Anthropic: Effective Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)——Context Rot 与 Write/Select/Compress/Isolate 的理论出处。
+- [How Claude Code Works](https://code.claude.com/docs/en/how-claude-code-works)——官方视角的工具与上下文说明。
