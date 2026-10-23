@@ -1,15 +1,119 @@
-## 动机
+import { Quiz } from "@/components/quiz";
+import { getQuestions } from "@/lib/quiz/questions";
 
-（本章内容写作中）
+export const questions = getQuestions("tools");
 
-## 直觉层
+## 动机：把「执行工具」这一环拆开
 
-## 机制层
+上一章的核心循环里，我们只写了一句 `tool.execute(...)`，就把「执行工具」一笔带过了。但真实世界里，工具调用是 agent 最复杂的一环之一：
 
-## 源码层
+- 模型**怎么知道**有哪些工具可以用？
+- 模型怎么表达「我想调这个工具、传这些参数」？
+- 参数错了怎么办？工具不存在怎么办？
+- 执行结果**怎么回传**，模型才能对上号？
+
+这一章把「工具调用」彻底拆开。它是你日常用 Claude Code / opencode 时，那些「读文件、改文件、跑命令」背后真正发生的事。
+
+## 直觉层：给模型一双「手」
+
+模型本来只会「说」，工具让它能「做」。
+
+想象你给助手一个**工具箱**，附一份**说明书**：
+
+- **说明书**（工具声明）：列出工具箱里有什么——「有一个计算器，能算数字；有一个搜索引擎，能查资料」。
+- 助手需要算账时，说：「我要用**计算器**，算 `123+456`」（**工具调用**：名字 + 参数）。
+- 你递上计算器，它算完，把结果写在便签上**贴回你们的对话**（**结果回传**）。
+
+关键在**说明书**：不给说明书，助手根本不知道有计算器，更不知道该怎么用它。给模型的「工具声明」就是这份说明书。
+
+## 机制层：function calling 协议三要素
+
+所有主流 harness 的工具调用，底层都遵循同一个协议（OpenAI 的 function calling，Anthropic / 其他家是等价物）。它只有三样东西：
+
+```ts
+// ① 工具声明：告诉模型「有什么工具、各要什么参数」
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "get_weather",
+      description: "查询指定城市的当前天气",
+      parameters: {
+        type: "object",
+        properties: { city: { type: "string", description: "城市名" } },
+        required: ["city"],
+      },
+    },
+  },
+];
+
+// ② 调用模型时带上 tools，模型可能返回 tool_calls
+async function turn(messages: Message[]): Promise<Message> {
+  const res = await callLLM({ messages, tools }); // tools 随请求传入
+  return res;
+  // res.tool_calls = [{ id: "call_1", function: { name: "get_weather", arguments: '{"city":"北京"}' } }]
+}
+
+// ③ 执行工具 + 结果回传
+const reply = await turn(messages);
+if (reply.tool_calls) {
+  for (const tc of reply.tool_calls) {
+    // 模型只给「意图」，真正执行由 harness 负责
+    const result = await executeByName(
+      tc.function.name,
+      JSON.parse(tc.function.arguments),
+    );
+    messages.push(reply); // 先放模型的消息（带 tool_calls）
+    messages.push({
+      role: "tool",               // 回传用 tool 角色
+      tool_call_id: tc.id,        // 用 id 关联回那次调用
+      content: JSON.stringify(result),
+    });
+  }
+}
+```
+
+三个要点：
+
+1. **工具声明是 JSON Schema**——模型靠它决定「该调哪个、传什么参数」。
+2. **tool_call 只是意图**——只有名字和参数，没有实现。实现永远由 harness 负责。
+3. **回传用 `tool_call_id` 关联**——模型一次可能调多个工具，id 让它知道「这个结果对应我哪次调用」。
+
+## 源码层：pi 的工具执行链路
+
+看真实实现。pi 的 `agent-loop.ts` 里，工具调用从「模型输出」到「结果回传」是一条清晰的链路：
+
+| 环节 | 演示代码 | pi 实现（agent-loop.ts） |
+|------|---------|--------------------------|
+| 工具声明给模型 | `tools` 数组 | `toToolDeclaration`（`:349`）——把内部工具转成模型认识的声明 |
+| 找到工具 + 校验参数 | `executeByName(...)` | `prepareToolCall`（`:708`）→ `validateToolArguments`（`:727`） |
+| 真正执行 | `tool.execute(...)` | `prepared.tool.execute(...)`（`:832`） |
+| 封装结果消息 | `{ role: "tool" }` | `createToolResultMessage`（`:930`） |
+| 批量执行策略 | 逐个 for 循环 | `executeToolCalls`（`:508`）分派顺序（`:530`）/ 并行（`:586`） |
+
+值得注意的几个「长大」之处：
+
+**参数校验**（`:727`）。演示代码里我们直接 `JSON.parse` 就执行了，真实实现会先 `validateToolArguments`——用工具声明的 schema 校验模型给的参数，参数不对就返回错误而不是执行。这是「模型输出不可信」的第一道防线。
+
+**顺序 vs 并行**（`:508`）。一次消息可能带多个工具调用。pi 会判断：标记为 `sequential` 的工具必须串行执行（后一个可能依赖前一个的结果），其余可以并行。
+
+**结果规范化**（`:930`）。`createToolResultMessage` 会把结果统一成 `ToolResultMessage`——即使工具执行抛异常，也会包成 `isError: true` 的结果回传给模型，而不是让循环崩溃。
+
+> 说明：本章主案例 codex 是 Rust 实现（本地无源码）。这里用同为开源、结构清晰的 pi 做源码溯源；两者遵循的是**同一套 function calling 协议**，差异在实现语言和并发模型，见延伸阅读。
 
 ## 小结
 
+- 工具调用 = **工具声明（JSON Schema）→ 模型 tool_call（意图）→ harness 执行 → tool 消息回传**。
+- 模型只知道「有什么工具、要什么参数」，**实现永远在 harness 这边**。
+- 真实 harness 会做**参数校验、顺序/并行分派、结果规范化**——模型输出不可信，每一步都要兜底。
+- 回传用 `tool_call_id` 关联，支持一次多个工具调用。
+
 ## 练习
 
+<Quiz questions={questions} />
+
 ## 延伸阅读
+
+- [pi 的 agent-loop.ts](https://github.com/wenliang-xiao/pi/blob/main/packages/agent/src/agent-loop.ts)——`executeToolCalls` 开始的工具执行链路，本地 `/Users/wenlix/project/pi/packages/agent/src/agent-loop.ts`。
+- [OpenAI Codex CLI](https://github.com/openai/codex)——Rust 实现的工具执行，对照本章 pi 的 TS 实现。
+- [OpenAI function calling 文档](https://platform.openai.com/docs/guides/function-calling)——本章协议层的官方定义。

@@ -61,9 +61,45 @@ const loopQuestions: Question[] = [
   },
 ];
 
+const toolsQuestions: Question[] = [
+  {
+    id: "tools-1",
+    type: "single",
+    prompt: "模型怎么知道「有哪些工具可以用」？",
+    options: [
+      "调用模型时，把工具声明（名字+描述+参数 schema）一起传进去",
+      "模型自己从互联网搜索",
+      "harness 把工具列表写进模型权重",
+    ],
+    answer: [0],
+    explain: "工具以「声明」（JSON Schema：名字、描述、参数）形式随请求传给模型，模型据此决定调用哪个、传什么参数。",
+  },
+  {
+    id: "tools-2",
+    type: "multiple",
+    prompt: "模型返回的「工具调用」（tool_call）里包含什么？（可多选）",
+    options: ["工具名", "参数（JSON）", "调用 id", "工具的实现代码"],
+    answer: [0, 1, 2],
+    explain: "tool_call 只有名字、参数和 id——它是「我想调这个工具、传这些参数」的意图，不含实现。实现由 harness 负责。",
+  },
+  {
+    id: "tools-3",
+    type: "single",
+    prompt: "工具执行完，结果怎么回传给模型？",
+    options: [
+      "作为一条 tool 角色消息，用 tool_call_id 关联回那次调用",
+      "作为新的 user 消息",
+      "直接拼进系统提示词",
+    ],
+    answer: [0],
+    explain: "结果是 tool 角色消息，带 tool_call_id 与原始调用对应，这样模型能知道「这个结果对应我哪次调用」。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
+  { chapterSlug: "tools", questions: toolsQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
