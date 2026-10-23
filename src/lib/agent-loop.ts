@@ -16,7 +16,10 @@ export type ToolCall = {
 };
 
 export type Tool = {
+  /** 执行查找名（内部真实名字） */
   name: string;
+  /** 声明给模型的名字（可改，实验 3：拼错这个名字触发「未知工具」） */
+  declaredName?: string;
   description: string;
   parameters: Record<string, unknown>;
   execute: (args: Record<string, unknown>) => Promise<string> | string;
@@ -27,6 +30,8 @@ export type RunConfig = {
   apiKey?: string;
   model?: string;
   maxTurns?: number;
+  /** 可编辑：系统提示（实验 2 删掉「调用 calculator」观察行为） */
+  systemPrompt?: string;
 };
 
 export type TraceEvent =
@@ -57,7 +62,7 @@ async function callLLM(
       messages,
       tools: tools.map((t) => ({
         type: "function",
-        function: { name: t.name, description: t.description, parameters: t.parameters },
+        function: { name: t.declaredName ?? t.name, description: t.description, parameters: t.parameters },
       })),
     }),
   });
@@ -76,8 +81,9 @@ export async function runLoop(
   onEvent?: (e: TraceEvent) => void,
 ): Promise<Message[]> {
   const maxTurns = config.maxTurns ?? 10;
+  const systemPrompt = config.systemPrompt ?? "你是一个助手，需要计算时调用 calculator 工具。";
   const messages: Message[] = [
-    { role: "system", content: "你是一个助手，需要计算时调用 calculator 工具。" },
+    { role: "system", content: systemPrompt },
     { role: "user", content: userRequest },
   ];
 

@@ -42,7 +42,10 @@ export type ToolCall = {
 
 // ── 2. 工具：模型能「调用」的东西 ─────────────────────────────
 export type Tool = {
+  /** 执行查找名（内部真实名字） */
   name: string;
+  /** 声明给模型的名字（可改，实验 3：拼错这个名字触发「未知工具」） */
+  declaredName?: string;
   description: string;
   parameters: Record<string, unknown>;
   execute: (args: Record<string, unknown>) => Promise<string> | string;
@@ -88,7 +91,7 @@ async function callLLM(
       tools: tools.map((t) => ({
         type: "function",
         function: {
-          name: t.name,
+          name: t.declaredName ?? t.name,
           description: t.description,
           parameters: t.parameters,
         },

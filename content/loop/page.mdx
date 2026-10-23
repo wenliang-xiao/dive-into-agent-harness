@@ -1,6 +1,6 @@
 import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
-import { InteractiveRunner } from "@/components/interactive-runner";
+import { CodeRunner } from "@/components/code-runner";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("loop");
@@ -105,8 +105,6 @@ async function runLoop(userRequest, tools, options) {
 
 模型**先要求调工具，再看到结果，最后给出答案**——这就是「有状态」的来源。注意四步里最容易被忽略的是第 ③ 步：不把结果 `push` 回去，模型就永远卡在「我要调 calculator」这一句。
 
-<InteractiveRunner />
-
 ## 对照基准：pi 的 agent-loop.ts 怎么实现
 
 现在把我们的 20 行，放进真实 harness 里看。pi 的核心循环在 `packages/agent/src/agent-loop.ts`。先看它的**设计框架**——一个函数怎么拆成一组协作的函数：
@@ -182,13 +180,42 @@ async function runLoop(...) {
 
 ## 实验：改三处，观察行为变化
 
-跑起来之后，动手改一改，感受循环的性质（都在 `d2a-harness/src/step-01-loop/` 里）：
+下面这段就是上面的 `runLoop`，**三个高亮值可以直接改**（对应下面的三个实验），改完点「运行」，观察行为变化：
 
-**实验 1 · 轮数上限**：把 `maxTurns` 改成 `1`，重跑。你会发现 agent 在第一轮调用工具后就被截断，没有机会看到工具结果给出最终答案——这就是「轮数上限」在防什么。
+export const loopCode = [
+  "async function runLoop(userRequest, tools, config) {",
+  "  const messages = [",
+  '    { role: "system", content: "[[systemPrompt]]" },',
+  '    { role: "user", content: userRequest },',
+  "  ];",
+  "  for (let turn = 0; turn < [[maxTurns]]; turn++) {",
+  "    const reply = await callLLM(messages, tools);",
+  "    messages.push(reply);",
+  "    const toolCalls = reply.tool_calls ?? [];",
+  "    if (toolCalls.length === 0) return messages;",
+  "    for (const tc of toolCalls) {",
+  '      const tool = tools.find(t => t.name === "[[toolName]]");',
+  "      const result = String(await tool.execute(JSON.parse(tc.function.arguments)));",
+  '      messages.push({ role: "tool", content: result, tool_call_id: tc.id });',
+  "    }",
+  "  }",
+  "  return messages;",
+  "}",
+];
 
-**实验 2 · 系统提示**：把 system 消息里的「需要计算时调用 calculator」删掉，重跑。观察模型会不会「想起」用工具——大概率不会，因为它根本不知道有这个工具。这解释了「工具声明」为什么重要（下一章展开）。
+export const loopParams = [
+  { key: "maxTurns", label: "maxTurns（轮数上限）", type: "number", defaultValue: "10", hint: "实验 1：改成 1，观察循环被截断" },
+  { key: "systemPrompt", label: "systemPrompt（系统提示）", type: "text", defaultValue: "你是助手，需要计算时调用 calculator 工具。", hint: "实验 2：删掉「调用 calculator」，模型就不知道有工具" },
+  { key: "toolName", label: "toolName（工具名）", type: "text", defaultValue: "calculator", hint: "实验 3：拼成 calulator，观察错误被兜住" },
+];
 
-**实验 3 · 未知工具**：故意让模型调一个不存在的工具（比如把工具名改成 `calulator` 拼错），观察错误如何被兜住——循环不会崩，而是把错误回传，模型看到后自行纠正。
+<CodeRunner
+  title="⚡ 实验：改三处，观察行为变化"
+  codeLines={loopCode}
+  highlightMap={{ model_call: 7, model_reply: 8, tool_call: 13, tool_result: 14, done: 10, max_turns_reached: 17 }}
+  params={loopParams}
+  defaultRequest="帮我算一下 123 * 456 等于多少"
+/>
 
 ## 小结
 
