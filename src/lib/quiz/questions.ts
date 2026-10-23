@@ -232,6 +232,41 @@ const evalQuestions: Question[] = [
   },
 ];
 
+const frontierQuestions: Question[] = [
+  {
+    id: "frontier-1",
+    type: "single",
+    prompt: "多模态语音 agent 的「Agent Presence」指什么？",
+    options: [
+      "对话保持流畅，agent 始终「在场」，不因查资料/思考而卡住",
+      "agent 一直开着摄像头",
+      "agent 的物理存在感",
+    ],
+    answer: [0],
+    explain: "语音是实时对话，用户不能忍受「agent 卡住 10 秒查资料」。Agent Presence = 让对话流保持流动，agent 随时响应。",
+  },
+  {
+    id: "frontier-2",
+    type: "single",
+    prompt: "corojaw 为什么拆成 gateway / loop / model / session / tool 多个模块？",
+    options: [
+      "生产化：各职责独立开发、独立扩展、独立部署",
+      "纯粹为了代码好看",
+      "因为 Java 强制要求",
+    ],
+    answer: [0],
+    explain: "云端 harness 要服务海量用户，把循环、模型、会话、工具拆成独立服务，才能各自扩展、独立升级。",
+  },
+  {
+    id: "frontier-3",
+    type: "single",
+    prompt: "这本书讲的核心循环，在云端生产化 harness 里对应哪个模块？",
+    options: ["loop 模块", "gateway 模块", "proto 模块"],
+    answer: [0],
+    explain: "第二章的「消息循环」在生产化后就是 corojaw 的 loop 模块——核心没变，只是从单进程函数变成了独立服务。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
@@ -240,6 +275,7 @@ export const questions: ChapterQuestions[] = [
   { chapterSlug: "sandbox", questions: sandboxQuestions },
   { chapterSlug: "multiagent", questions: multiagentQuestions },
   { chapterSlug: "eval", questions: evalQuestions },
+  { chapterSlug: "frontier", questions: frontierQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
