@@ -1,15 +1,104 @@
-## 动机
+import { Quiz } from "@/components/quiz";
+import { getQuestions } from "@/lib/quiz/questions";
 
-（本章内容写作中）
+export const questions = getQuestions("sandbox");
 
-## 直觉层
+## 动机：能力越大，破坏力越大
 
-## 机制层
+上一章我们给 agent 装上了「执行工具」的手。但工具执行——特别是跑命令、改文件——恰恰是 agent **最强大也最危险**的地方：
 
-## 源码层
+- 一句 `rm -rf` 就能删掉整个项目；
+- 被 prompt injection 劫持后，agent 可能执行攻击者注入的恶意命令；
+- 模型「以为」安全的操作，可能实际破坏环境。
+
+所以 harness 必须回答一个问题：**给 agent 手脚之后，怎么给它护栏？** 这一章讲沙箱与安全的三件事——**隔离、权限、审批**。
+
+## 直觉层：手脚之外，还要护栏
+
+想象你让一个力气很大的学徒帮你修车。你给了他工具（手脚），但必须立规矩：
+
+- **护栏一：隔离**——让他在一个「围起来的工作台」干活，摔了扳手也只砸到工作台，砸不到外面的花瓶。
+- **护栏二：权限**——明确规定「哪些工具他能直接用，哪些必须请示」。
+- **护栏三：审批**——碰到「拆发动机」这种大事，先停下来问你一声，你点头才动手。
+
+agent 的沙箱（隔离）、权限（allowlist/denylist）、审批（approval）就是这三道护栏。
+
+## 机制层：一个权限钩子的简化版
+
+最通用的机制是「工具执行前的钩子」——每个工具真正执行前，先过一道检查，检查不通过就拦下：
+
+```ts
+type PermissionCheck = (toolName: string, args: unknown) => { allow: boolean; reason?: string };
+
+async function executeWithPermission(
+  toolCall: ToolCall,
+  check: PermissionCheck,
+  execute: (toolCall: ToolCall) => Promise<string>,
+): Promise<string> {
+  const verdict = check(toolCall.name, toolCall.arguments);
+
+  if (!verdict.allow) {
+    // 拦下：不执行，把「被拦」作为结果回传给模型
+    return `工具 ${toolCall.name} 被拦截：${verdict.reason ?? "需要审批"}`;
+  }
+
+  return execute(toolCall); // 放行，真正执行
+}
+```
+
+关键设计：**拦截不是崩溃，而是「回传一条错误结果」**。模型看到「被拦截」后，可以调整策略——比如换一种不危险的做法，而不是整个 agent 卡死。
+
+## 源码层：pi 的 beforeToolCall 钩子
+
+pi 的真实实现，就是把这个钩子做成了贯穿整个工具执行链路的机制。`agent-loop.ts` 里定义了 `ToolCallHooks`（`agent-loop.ts:683`）：
+
+```ts
+export type ToolCallHooks = Pick<AgentLoopConfig, "beforeToolCall" | "afterToolCall">;
+```
+
+而 `prepareToolCall`（`agent-loop.ts:708`）在**每个工具真正执行之前**调用它（`:728`）：
+
+```ts
+if (config.beforeToolCall) {
+  const beforeResult = await config.beforeToolCall({
+    assistantMessage,
+    toolCall,
+    args: validatedArgs,
+    context: currentContext,
+  }, signal);
+  // ...
+  if (beforeResult?.block) {
+    // 拦下：返回错误结果，而不是执行
+    return {
+      kind: "immediate",
+      result: createErrorToolResult(beforeResult.reason || "Tool execution was blocked"),
+      isError: true,
+    };
+  }
+}
+```
+
+值得注意的三个设计：
+
+1. **block 是「返回错误结果」，不是抛异常**。被拦的工具调用变成一条 `isError: true` 的结果回传，循环照常继续——模型看到后自己调整。
+2. **钩子覆盖所有工具调用**。源码注释点明：`runToolCall` 让「工具调工具」（嵌套调用）也走同一套钩子——「so the hooks (for example permission checks) apply to those calls too」（`agent-loop.ts:804`）。权限检查没有「后门」，嵌套调用绕不过去。
+3. **参数校验在前，权限在后**。先 `validateToolArguments`（`:727`）确认参数合法，再 `beforeToolCall` 做权限判断——坏参数根本到不了执行，也到不了权限判断。
+
+> 对照案例 codex：OpenAI Codex CLI（Rust）的沙箱是**真隔离**——它在受限环境里执行命令，并有 approval mode（默认会就危险操作向用户确认）。pi 的 `beforeToolCall` 是「审批流」的钩子落点，两者思路一致：**执行前拦截，危险操作要人点头**。
 
 ## 小结
 
+- 沙箱与安全三件事：**隔离**（限定破坏范围）、**权限**（能做什么）、**审批**（危险操作要人确认）。
+- 核心机制是「执行前钩子」：`beforeToolCall` 在工具真正执行前做权限检查，`block` 即拦截。
+- **拦截 ≠ 崩溃**：被拦的工具调用变成错误结果回传，模型看到后调整策略，循环继续。
+- 钩子覆盖**所有**工具调用（含嵌套调用），没有后门。
+- 顺序是「先校验参数，再判断权限」——坏参数到不了权限层。
+
 ## 练习
 
+<Quiz questions={questions} />
+
 ## 延伸阅读
+
+- [pi 的 agent-loop.ts](https://github.com/wenliang-xiao/pi/blob/main/packages/agent/src/agent-loop.ts)——`prepareToolCall`（`:708`）与 `beforeToolCall` 权限钩子，本地 `/Users/wenlix/project/pi/packages/agent/src/agent-loop.ts`。
+- [OpenAI Codex CLI](https://github.com/openai/codex)——Rust 沙箱与 approval mode，对照本章的钩子式审批。

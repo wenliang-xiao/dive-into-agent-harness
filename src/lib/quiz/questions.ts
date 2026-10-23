@@ -131,11 +131,43 @@ const contextQuestions: Question[] = [
   },
 ];
 
+const sandboxQuestions: Question[] = [
+  {
+    id: "sandbox-1",
+    type: "single",
+    prompt: "pi 的 `beforeToolCall` 钩子在什么时候触发？",
+    options: ["工具执行之前，用来做权限检查", "工具执行之后", "只在报错时触发"],
+    answer: [0],
+    explain: "beforeToolCall 在工具真正执行前调用，返回 block 就能拦下这次调用——这是审批流/权限检查的落点。",
+  },
+  {
+    id: "sandbox-2",
+    type: "single",
+    prompt: "一个工具调用被 block 后，会发生什么？",
+    options: [
+      "不执行，返回一条错误结果回传给模型",
+      "整个 agent 崩溃退出",
+      "跳过这个工具继续执行下一个",
+    ],
+    answer: [0],
+    explain: "block 不是崩溃，而是把「被拦了」作为错误结果回传，模型看到后可以调整策略（比如换一种不危险的做法）。",
+  },
+  {
+    id: "sandbox-3",
+    type: "multiple",
+    prompt: "为什么 agent 需要沙箱/权限约束？（可多选）",
+    options: ["它执行的命令可能有破坏性（如 rm -rf）", "它可能误删文件", "模型输出不可信，可能被 prompt injection 劫持", "它跑得不够快"],
+    answer: [0, 1, 2],
+    explain: "agent 的强大来自「能执行」，但这也意味着破坏力。加上模型输出不可信、可能被注入劫持，必须用沙箱/权限兜底。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
   { chapterSlug: "tools", questions: toolsQuestions },
   { chapterSlug: "context", questions: contextQuestions },
+  { chapterSlug: "sandbox", questions: sandboxQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
