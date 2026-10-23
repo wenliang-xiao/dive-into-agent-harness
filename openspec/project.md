@@ -92,7 +92,7 @@ D2L 的演进逻辑是「模型越来越强」，映射为「agent 能力越来�
 | 书内容 | MDX（Markdown + 交互组件） | 同左，章节体系化 |
 | 前端 | Next.js（App Router） | 演进为前后端分离 |
 | 后端 | Next.js API Routes（轻） | 独立后端服务 |
-| 数据库 | Drizzle ORM 抽象，默认 SQLite、部署切 PostgreSQL（Supabase/Neon） | 完整账号/排行/社区 |
+| 数据库 | Drizzle ORM 抽象，本地 better-sqlite3、部署切 Turso 托管 SQLite（见 ADR-0001） | 完整账号/排行/社区 |
 | 刷题数据 | 进度/错题本/连续打卡**服务端持久化**（多设备 + 排行榜） | 粉笔式完整题库平台 |
 | 部署 | Vercel 一键部署 | 自建/云 |
 
