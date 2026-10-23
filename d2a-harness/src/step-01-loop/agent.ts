@@ -26,7 +26,6 @@
  */
 
 // ── 1. 消息：agent 的唯一状态 ─────────────────────────────────
-// 四种角色，构成一次完整对话的最小单位。
 export type Message = {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
@@ -42,8 +41,6 @@ export type ToolCall = {
 };
 
 // ── 2. 工具：模型能「调用」的东西 ─────────────────────────────
-// 声明（name/description/parameters）告诉模型「有什么、怎么用」；
-// execute 是真正实现 —— 模型只给意图，执行永远在 harness 这边。
 export type Tool = {
   name: string;
   description: string;
@@ -51,24 +48,43 @@ export type Tool = {
   execute: (args: Record<string, unknown>) => Promise<string> | string;
 };
 
-export type LoopOptions = {
-  /** 最大轮数保护：防止模型反复调同一个工具造成死循环 */
+// ── 3. 运行配置：支持用自己的 key / baseUrl / 模型 ────────────
+export type RunConfig = {
+  baseUrl?: string;
+  apiKey?: string;
+  model?: string;
   maxTurns?: number;
 };
 
-// ── 3. 调用模型：无状态函数 f ─────────────────────────────────
-async function callLLM(messages: Message[], tools: Tool[]): Promise<Message> {
-  const base = (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+// ── 4. 可观测：循环每一步发一个 trace 事件 ─────────────────────
+// CLI 用它打印轨迹，网页用它画实时流程图。同一份代码，两种呈现。
+export type TraceEvent =
+  | { type: "model_call"; turn: number; messages: Message[] }
+  | { type: "model_reply"; turn: number; reply: Message }
+  | { type: "tool_call"; turn: number; name: string; args: string }
+  | { type: "tool_result"; turn: number; result: string }
+  | { type: "done"; answer: string }
+  | { type: "max_turns_reached" };
+
+// ── 5. 调用模型：无状态函数 f ─────────────────────────────────
+async function callLLM(
+  messages: Message[],
+  tools: Tool[],
+  config: RunConfig,
+): Promise<Message> {
+  const base = (config.baseUrl ?? process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+  const apiKey = config.apiKey ?? process.env.OPENAI_API_KEY;
+  const model = config.model ?? process.env.OPENAI_MODEL ?? "gpt-4o";
+
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o",
+      model,
       messages,
-      // 工具声明随请求传入：模型据此决定调哪个、传什么参数
       tools: tools.map((t) => ({
         type: "function",
         function: {
@@ -87,32 +103,36 @@ async function callLLM(messages: Message[], tools: Tool[]): Promise<Message> {
   return data.choices[0].message;
 }
 
-// ── 4. 核心循环 ──────────────────────────────────────────────
-// 返回完整消息历史（而不只是最终答案），这样你能「看到」循环的每一步。
+// ── 6. 核心循环 ──────────────────────────────────────────────
 export async function runLoop(
   userRequest: string,
   tools: Tool[],
-  options: LoopOptions = {},
+  config: RunConfig = {},
+  onEvent?: (e: TraceEvent) => void,
 ): Promise<Message[]> {
-  const maxTurns = options.maxTurns ?? 10;
+  const maxTurns = config.maxTurns ?? 10;
   const messages: Message[] = [
     { role: "system", content: "你是一个助手，需要计算时调用 calculator 工具。" },
     { role: "user", content: userRequest },
   ];
 
-  // ① 循环：反复调用 f，直到模型不再要求调工具，或达到轮数上限
   for (let turn = 0; turn < maxTurns; turn++) {
-    const reply = await callLLM(messages, tools);
+    // ① 调用模型
+    onEvent?.({ type: "model_call", turn, messages: [...messages] });
+    const reply = await callLLM(messages, tools, config);
+    onEvent?.({ type: "model_reply", turn, reply });
     messages.push(reply);
 
     // ② 判断：有工具调用吗？
     const toolCalls = reply.tool_calls ?? [];
     if (toolCalls.length === 0) {
-      return messages; // 没有 → 任务完成
+      onEvent?.({ type: "done", answer: reply.content });
+      return messages;
     }
 
-    // ③ 执行 + 回填：把工具结果追加进状态，下一轮模型就能「看到」
+    // ③ 执行 + 回填
     for (const tc of toolCalls) {
+      onEvent?.({ type: "tool_call", turn, name: tc.function.name, args: tc.function.arguments });
       const tool = tools.find((t) => t.name === tc.function.name);
       let result: string;
       if (!tool) {
@@ -124,10 +144,11 @@ export async function runLoop(
           result = `错误：${e instanceof Error ? e.message : String(e)}`;
         }
       }
+      onEvent?.({ type: "tool_result", turn, result });
       messages.push({ role: "tool", content: result, tool_call_id: tc.id });
     }
   }
 
-  // 达到轮数上限仍未结束：返回当前状态（真实 harness 会在此触发熔断/报错）
+  onEvent?.({ type: "max_turns_reached" });
   return messages;
 }

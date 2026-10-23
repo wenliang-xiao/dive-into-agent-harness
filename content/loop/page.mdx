@@ -1,5 +1,6 @@
 import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
+import { InteractiveRunner } from "@/components/interactive-runner";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("loop");
@@ -104,20 +105,80 @@ async function runLoop(userRequest, tools, options) {
 
 模型**先要求调工具，再看到结果，最后给出答案**——这就是「有状态」的来源。注意四步里最容易被忽略的是第 ③ 步：不把结果 `push` 回去，模型就永远卡在「我要调 calculator」这一句。
 
+<InteractiveRunner />
+
 ## 对照基准：pi 的 agent-loop.ts 怎么实现
 
-现在看真实 harness。pi 的核心循环在 `packages/agent/src/agent-loop.ts` 的 `runLoop`。它和我们写的**结构完全同构**，只是每一环都「长大」了：
+现在把我们的 20 行，放进真实 harness 里看。pi 的核心循环在 `packages/agent/src/agent-loop.ts`。先看它的**设计框架**——一个函数怎么拆成一组协作的函数：
 
-| 我们写的 | pi 的实现（agent-loop.ts） | 差异 |
-|---------|---------------------------|------|
-| `for` 循环 | 双层 `while`（`:179` 外层、`:183` 内层） | 外层应对「用户中途插话」，内层才是核心循环 |
-| `callLLM` | `streamAssistantResponse`（`:242`） | 流式：一个字一个字出来，不是一次性返回 |
-| `reply.tool_calls ?? []` | `message.content.filter(c => c.type === "toolCall")`（`:259`） | 工具调用是 content 的一种类型，可混在文本里 |
-| `tool.execute(...)` | `executeToolCalls`（`:270`） | 支持顺序/并行两种执行模式 |
-| `messages.push(result)` | `currentContext.messages.push(result)`（`:275`） | 完全一样 |
-| `maxTurns` 上限 | `finishTurn` + `decision.action === "end"`（`:289`） | 结束条件更灵活：可显式 continue/end |
+```text
+runLoop（主循环，:157）
+├─ 双层循环
+│   ├─ 外层 while(true)（:179）              ← 应对用户中途插话（follow-up）
+│   └─ 内层 while(hasMoreToolCalls)（:183）  ← 核心循环，处理工具调用
+├─ streamAssistantResponse（:381）           ← 调用模型，流式输出
+├─ executeToolCalls（:508）                  ← 执行工具
+│   ├─ prepareToolCall（:708）               ← 找工具 + 校验参数 + beforeToolCall 权限
+│   ├─ executePreparedToolCall（:821）       ← 真正调用 tool.execute
+│   └─ createToolResultMessage（:930）       ← 封装结果消息
+└─ finishTurn（配置钩子，:286）              ← 判断是否继续/结束
+```
 
-**结论**：我们写的 20 行，就是 pi 那 400 行的「骨架」。pi 多出来的东西——流式响应、工具批处理、事件系统、steering 消息——正是本书后面章节要逐一拆开的内容。
+对比我们写的：**我们只有 `runLoop` 一个函数，pi 把它拆成了 7 个**。为什么拆？因为真实 harness 要解决我们没面对的问题：流式输出、参数校验、权限、并行执行、事件通知。每一块对应本书后面的一章。
+
+### 真实代码（annotated）
+
+下面贴出 pi 的 `runLoop` 关键段，逐行标注（`// ←` 是我们的对应物）：
+
+```ts
+// packages/agent/src/agent-loop.ts:157（已精简，保留骨架）
+async function runLoop(...) {
+  // 外层循环：用户可能中途插话，来了新消息就继续
+  while (true) {                                    // :179  ← 我们的 for 循环
+    let hasMoreToolCalls = true;
+    // 内层循环：处理工具调用，这是真正的「核心循环」
+    while (hasMoreToolCalls || pendingMessages.length > 0) {  // :183
+      // ...准备请求、处理 steering 消息...
+
+      const message = await streamAssistantResponse(...);  // :242 ← 我们的 callLLM
+
+      // 检查工具调用：工具调用是 content 的一种类型，可和文本混排
+      const toolCalls = message.content.filter(c => c.type === "toolCall");  // :259
+      //                                                 ↑ ← 我们的 reply.tool_calls ?? []
+
+      hasMoreToolCalls = false;
+      if (toolCalls.length > 0) {
+        const executed = await executeToolCalls(...);   // :270 ← 我们的 tool.execute
+        toolResults.push(...executed.messages);
+        hasMoreToolCalls = !executed.terminate;         // :272 ← 我们的「还有工具吗」
+        for (const result of toolResults) {
+          currentContext.messages.push(result);         // :275 ← 我们的 messages.push
+        }
+      }
+
+      // 判断是否结束：交给 finishTurn 钩子，而非硬编码
+      const decision = await config.finishTurn?.(...);  // :286 ← 我们的 maxTurns
+      if (decision?.action === "end") { return; }       // :289
+    }
+    // 检查 follow-up 消息，有则继续外层循环
+  }
+}
+```
+
+### 逐块对比：具体差在哪
+
+| 环节 | 我们写的 | pi 的实现 | **具体区别** |
+|------|---------|-----------|-------------|
+| 循环结构 | 一个 `for` | 双层 `while`（`:179`/`:183`） | 内层是核心循环；外层额外处理「用户中途插话」——真实对话里用户会打断 agent |
+| 调用模型 | `callLLM` 一次性返回 | `streamAssistantResponse`（`:242`） | 流式：边生成边发事件，UI 能实时渲染「正在想…」，不用等整段完成 |
+| 工具调用 | 顶层 `tool_calls` 字段 | `content` 数组里 `type==="toolCall"`（`:259`） | 工具调用能**和文本混排**在同一条消息里（先解释一句再调工具） |
+| 执行工具 | 直接 `tool.execute` | `executeToolCalls`（`:270`）五步 | 拆成：找工具 → 校验参数 → 权限检查（`beforeToolCall`）→ 执行 → 后处理 |
+| 回填结果 | `messages.push(result)` | `currentContext.messages.push(result)`（`:275`） | **完全一样**——这是所有 harness 的不变量 |
+| 结束条件 | `maxTurns` 硬上限 | `finishTurn` 钩子（`:286`） | 结束交给可配置的钩子，能显式决定 `end` / `continue`，更灵活 |
+
+### 一句话结论
+
+我们写的 20 行，就是 pi 那 400 行的**骨架**。pi 多出来的 380 行，不是「更聪明」，而是**把每一环拆开、加装生产必需的能力**——流式、校验、权限、并行、事件。这 380 行，就是本书后面七章要逐一拆开的内容。
 
 ## 实验：改三处，观察行为变化
 

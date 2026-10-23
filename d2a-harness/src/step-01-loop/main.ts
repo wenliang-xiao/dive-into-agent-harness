@@ -1,5 +1,5 @@
 /**
- * Step 01 运行示例：让 agent 算一道数学题，并打印循环的每一步。
+ * Step 01 运行示例：让 agent 算一道数学题，并用 trace 打印循环的每一步。
  *
  * 先配置 .env（复制 .env.example 填 key），然后：
  *   npm run step-01
@@ -30,19 +30,31 @@ const calculator: Tool = {
   },
 };
 
-const messages = await runLoop("帮我算一下 123 * 456 等于多少", [calculator]);
-
-// 打印完整消息历史：你能看到循环的每一步
-console.log("=== 消息历史（循环的每一步）===\n");
-for (const m of messages) {
-  if (m.role === "tool") {
-    console.log(`[tool]  (调用 ${m.tool_call_id}) → ${m.content}`);
-  } else if (m.tool_calls?.length) {
-    const names = m.tool_calls.map((tc) => `${tc.function.name}(${tc.function.arguments})`).join(", ");
-    console.log(`[assistant] 想调工具: ${names}`);
-  } else {
-    console.log(`[${m.role}] ${m.content}`);
+// 用 onEvent 打印每一步 trace
+await runLoop("帮我算一下 123 * 456 等于多少", [calculator], {}, (e) => {
+  switch (e.type) {
+    case "model_call":
+      console.log(`\n[第 ${e.turn} 轮] 调用模型（喂入 ${e.messages.length} 条消息）`);
+      break;
+    case "model_reply":
+      if (e.reply.tool_calls?.length) {
+        const c = e.reply.tool_calls.map((tc) => `${tc.function.name}(${tc.function.arguments})`).join(", ");
+        console.log(`        模型想调工具: ${c}`);
+      } else {
+        console.log(`        模型回答: ${e.reply.content}`);
+      }
+      break;
+    case "tool_call":
+      console.log(`        执行工具 ${e.name}(${e.args})`);
+      break;
+    case "tool_result":
+      console.log(`        工具结果: ${e.result}`);
+      break;
+    case "done":
+      console.log(`\n✅ 最终答案: ${e.answer}`);
+      break;
+    case "max_turns_reached":
+      console.log("\n⚠️ 达到轮数上限，循环被截断");
+      break;
   }
-}
-console.log("\n=== 最终答案 ===");
-console.log(messages.at(-1)?.content);
+});
