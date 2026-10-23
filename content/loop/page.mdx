@@ -1,15 +1,150 @@
-## 动机
+import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
+import { getQuestions } from "@/lib/quiz/questions";
 
-（本章内容写作中）
+export const questions = getQuestions("loop");
 
-## 直觉层
+## 动机：为什么先讲循环
 
-## 机制层
+引言章里我们说：**一个 LLM + 一个消息循环 = 最简 agent**。这一章就把这个循环彻底拆开。
 
-## 源码层
+为什么循环是全书第一个正式章节？因为它是 agent 的「骨架」。后面要讲的工具调用、上下文管理、沙箱、多 agent 编排——**全部是在这个循环之上加装的**。你理解了循环，后面每一章都能看到「这个能力是在循环的哪一环插进来的」。
+
+而且这个循环极其朴素：不到十行伪代码，却是所有 agent——从你本地的 opencode 到云端服务百万用户的 xiaoaiclaw——共同的心跳。
+
+## 直觉层：像一场「边想边动手」的对话
+
+想象你和朋友合作修一辆车：
+
+1. 你说：「帮我把发动机修好」（**你发起请求**）
+2. 朋友想了想：「我得先拆下气缸盖」（**模型决定下一步**）
+3. 朋友真的去拿扳手、拆螺丝（**执行工具**）
+4. 拆开后朋友看到活塞坏了，说：「得换活塞」（**结果回填，重新思考**）
+5. 循环 3→4，直到朋友说：「修好了」（**不再动手，给出答案**）
+
+关键在**第 4 步**：如果朋友拆开之后不「看到」结果，他永远停在「我要拆气缸盖」这一步。**把动手的结果喂回思考，就是循环存在的意义。**
+
+<DiagramFrame src="/diagram/loop/agent-loop.html" title="Agent 核心循环（可交互）" />
+
+## 机制层：一个最小可运行的循环
+
+下面的 TypeScript 代码就是一个能真正跑起来的 agent 循环（去掉鉴权细节，约 40 行）。对照引言章的四步伪代码，一一对应：
+
+```ts
+type Message = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  toolCalls?: { id: string; name: string; arguments: unknown }[];
+  toolCallId?: string;
+};
+
+type Tool = {
+  name: string;
+  execute: (args: unknown) => Promise<string>;
+};
+
+async function callLLM(messages: Message[]): Promise<Message> {
+  // 调用 OpenAI 兼容接口，返回模型的 assistant 消息（可能带 toolCalls）
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.API_KEY}`,
+    },
+    body: JSON.stringify({ model: "gpt-4o", messages }),
+  });
+  const data = await res.json();
+  return data.choices[0].message;
+}
+
+async function agentLoop(userRequest: string, tools: Tool[]): Promise<string> {
+  const messages: Message[] = [
+    { role: "system", content: "你是助手，需要时调用工具。" },
+    { role: "user", content: userRequest },
+  ];
+
+  while (true) {
+    // ① 调用模型
+    const reply = await callLLM(messages);
+
+    // ② 判断：模型要调工具吗？
+    const toolCall = reply.toolCalls?.[0];
+    if (!toolCall) {
+      return reply.content; // ④ 没有工具调用，返回最终答案
+    }
+
+    // ③ 执行工具 + 回填结果
+    const tool = tools.find((t) => t.name === toolCall.name);
+    const result = tool ? await tool.execute(toolCall.arguments) : "工具不存在";
+    messages.push(reply);
+    messages.push({ role: "tool", content: result, toolCallId: toolCall.id });
+    // 回到循环顶部：让模型「看到」结果后，再决定下一步
+  }
+}
+```
+
+这段代码值得你逐行读一遍。它和引言章伪代码的唯一区别是：伪代码把「判断」写成了显式的一步，这里用 `toolCall?.[0]` 的判空表达了同样的语义。
+
+## 源码层：真实 harness 怎么实现这个循环
+
+现在看真实实现。pi 的核心循环在 `packages/agent/src/agent-loop.ts` 的 `runLoop` 函数。它和我们写的演示代码结构完全同构，只是每一环都「长大」了。
+
+### 双层循环
+
+真实 harness 有**两层**循环（`agent-loop.ts:179`、`:183`）：
+
+```ts
+// 外层：用户可能追加新消息，继续跑
+while (true) {
+  let hasMoreToolCalls = true;
+  // 内层：处理工具调用和 steering 消息
+  while (hasMoreToolCalls || pendingMessages.length > 0) {
+    // ... 核心步骤 ...
+  }
+  // ...
+}
+```
+
+外层应对「用户中途插话」，内层才是我们讲的「调用模型 → 执行工具 → 回填」的核心循环。
+
+### 四步的真实对应
+
+对照演示代码的四步，pi 的实现是这样：
+
+| 步骤 | 演示代码 | pi 真实实现（agent-loop.ts） |
+|------|---------|------------------------------|
+| ① 调用模型 | `callLLM(messages)` | `streamAssistantResponse(...)`（`:242`）——流式响应，边生成边显示 |
+| ② 判断有无工具调用 | `reply.toolCalls?.[0]` | `message.content.filter((c) => c.type === "toolCall")`（`:259`） |
+| ③ 执行工具 | `tool.execute(...)` | `executeToolCalls(...)`（`:270`）——支持顺序/并行两种模式 |
+| ④ 回填结果 | `messages.push({ role: "tool" })` | `currentContext.messages.push(result)`（`:275`） |
+| 结束判断 | `return reply.content` | `decision?.action === "end"`（`:289`） |
+
+### 真实实现多了什么
+
+你会在 `agent-loop.ts` 里看到演示代码没有的机制，它们对应本书后面的章节：
+
+- **流式响应**（`streamAssistantResponse`，`:381`）：模型输出是一个字一个字「流」出来的，不是一次性返回。
+- **工具批处理**（`executeToolCalls`，`:508`）：一次消息可能带多个工具调用，顺序或并行执行。
+- **截断保护**（`failToolCallsFromTruncatedMessage`）：输出被 token 上限截断时，不执行可能残缺的工具调用。
+- **steering / follow-up 消息**：用户或系统可以中途插入新消息。
+- **事件系统**（`emit(...)`）：每一步都发事件，UI 靠它渲染。
+
+这就是「从最简循环到真实 harness」的完整距离——**核心没变，每一环都变成了子系统**。
 
 ## 小结
 
+- 核心循环 = **调用模型 → 判断 → 执行工具 → 回填结果 → 循环 / 结束**。
+- 「回填结果」是循环的灵魂：不把动手结果喂回模型，agent 就卡死在同一思考里。
+- 真实 harness 用**双层循环**：外层应对中途插话，内层处理工具调用。
+- pi 的 `agent-loop.ts` 与我们写的演示代码结构同构，只是每一环都加装了流式、批处理、事件等子系统。
+- 本书后续章节，就是在讲这些「加装」——工具系统、上下文、沙箱、编排。
+
 ## 练习
 
+<Quiz questions={questions} />
+
 ## 延伸阅读
+
+- [pi 的 agent-loop.ts](https://github.com/wenliang-xiao/pi/blob/main/packages/agent/src/agent-loop.ts)（本地 `/Users/wenlix/project/pi/packages/agent/src/agent-loop.ts`）——本章源码层的主素材，完整读一遍。
+- [opencode](https://github.com/sst/opencode)——另一个开源 coding agent，它的 message loop 是对照案例（下一章「工具调用」再深挖）。
+- 《动手学深度学习》第 4 章「线性回归」——D2L 也是从一个「最简模型」开始，我们这一章是 agent 版的「线性回归」。
