@@ -1,15 +1,16 @@
 import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
+import { CodeRunner } from "@/components/code-runner";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("frontier");
 
 ## 动机：从「个人工具」到「基础设施」
 
-前面七章，我们讲的都是「一个 agent 干一件事」的核心机制。但真实世界里的 agent 有两种更复杂的形态：
+前面六章，我们讲的都是「一个单进程里的 agent」。但真实世界里的 agent 有两种更复杂的形态：
 
 - **多模态**：不只有文字，还有语音、图像——像 qwen-audio-agent 这样的实时语音 agent。
-- **云端生产化**：从你本地的单进程 harness，变成服务百万用户的分布式系统——像 xiaoaiclaw、coro 这样的线上服务。
+- **云端生产化**：从你本地的单进程 harness，变成服务百万用户的分布式系统——像 xiaoaiclaw、coro。
 
 这一章看这两个「前沿」形态，并做一次全书的全景回顾。
 
@@ -17,68 +18,123 @@ export const questions = getQuestions("frontier");
 
 我们反复强调：**核心循环是所有 agent 的共同骨架**。前沿形态不是推翻骨架，而是两种「长大」方式：
 
-- **多模态** = 给这个循环**换输入输出**——不是打字，而是说话、看东西。循环不变，进出通道变了。
-- **生产化** = 把这个循环**拆开、放大**——从单进程的一个函数，变成多个独立服务，各自扛住海量请求。循环不变，规模变了。
+- **多模态** = 给循环**换进出通道**——不是打字，而是说话、看东西。循环不变，进出变了。
+- **生产化** = 把循环**拆开、放大**——从单进程一个函数，变成多个独立服务，各自扛住海量请求。循环不变，规模变了。
 
-## 机制层：多模态的「Agent Presence」
+## 根源理解：核心循环从没变过
 
-语音 agent 和文字 agent 有个本质区别：**文字可以等，语音不能**。
+回到 step-01 的结论：**LLM 是无状态函数，agent 的状态是消息数组，循环是「反复调用 + 回填」**。
 
-你打字问问题，agent 查资料卡 10 秒，你能接受。但你**说话**问问题，agent 沉默 10 秒，你会以为它坏了。qwen-audio-agent 的核心设计就是解决这个，他们称之为 **Agent Presence**：
+这个结论和「文字还是语音」「单机还是云端」**无关**：
+
+1. **多模态**：语音 agent 也是「消息数组 + 循环」，只是消息从「文本」变成了「音频转录的文本」。核心循环一行不用改。
+2. **生产化**：云端 harness 拆成 loop/tool/context 多个服务，但每个服务的核心还是一个「消息循环」。拆的是「部署边界」，不是「循环逻辑」。
+
+所以前沿形态的本质是：**核心循环不变，变的是 I/O 通道和部署规模**。
+
+## 从零实现：模块化拆分
+
+前面六章，我们把循环、工具、上下文、沙箱都写在一个文件里。生产化要做的第一件事，就是**拆成模块**：
+
+```ts
+// 单文件 → 多模块（每个模块对应一个生产化服务）
+type LoopModule    = { run: (request: string) => Promise<string> };
+type ToolsModule   = { list: () => string[]; execute: (name, args) => Promise<string> };
+type ContextModule = { estimateTokens: (msgs) => number; compact: (msgs) => Promise<unknown[]> };
+type SandboxModule = { check: (toolName, args) => { allow: boolean; reason?: string } };
+
+// 组装：生产化 harness = 各模块的组合
+function createHarness(loop, tools, context, sandbox) {
+  return { loop, tools, context, sandbox };
+}
+```
+
+模块化后，模块间通过**接口**通信，而不是共享一个文件——这是「拆开」的关键：每个模块能独立开发、独立扩展、独立部署。
+
+## 对照基准：corojaw 的模块拆分 + 多模态的 Agent Presence
+
+**生产化对照**：corojaw（Java）把一个 harness 拆成了清晰的模块，每个模块对应我们前面的一章：
+
+<DiagramFrame src="/diagram/frontier/corojaw.html" title="corojaw 模块结构（可交互）" />
+
+| corojaw 模块 | 对应本书章节 |
+|-------------|-------------|
+| `corojaw-loop` | 第 1 章 核心循环 |
+| `corojaw-tool` | 第 2 章 工具调用 |
+| `corojaw-context` / `corojaw-session` | 第 3 章 上下文 |
+| `corojaw-gateway` / `corojaw-proto` | 入口 + 模块通信 |
+
+你会发现：**我们第 1 章那个 `runLoop` 函数，生产化后就是 `corojaw-loop` 一个独立服务**。核心没变，只是从「单进程函数」变成了「可独立扩展的服务」。
+
+**多模态对照**：qwen-audio-agent 是实时语音 agent，核心设计是 **Agent Presence**：
 
 > Conversation should keep flowing, and the Agent should always be present. 对话要一直流动，agent 要始终在场。
 
-这意味着语音 agent 的循环里，要插入「填充」机制：agent 查找资料时，不是沉默，而是发出「嗯，我在查」的语音占位——**用流畅的在场感，掩盖后台的思考延迟**。核心循环没变，但「调用模型」和「执行工具」之间多了一层实时交互的缓冲。
-
-## 源码层：corojaw 的生产化模块拆分
-
-看云端生产化。corojaw（Java）把一个 harness 拆成了清晰的模块，每个模块对应我们前面讲过的一章：
-
-| corojaw 模块 | 对应本书章节 | 职责 |
-|-------------|-------------|------|
-| `corojaw-gateway` | — | 入口网关，接请求、路由 |
-| `corojaw-loop` | 第 2 章 核心循环 | 消息循环：调用模型 → 执行工具 → 回填 |
-| `corojaw-model` | 第 3 章 工具调用 | 模型接入、工具执行 |
-| `corojaw-session` | 第 4 章 上下文 | 会话状态、上下文管理 |
-| `corojaw-tool` | 第 5 章 沙箱 | 工具系统 |
-| `corojaw-context` | 第 4 章 | 上下文工程 |
-| `corojaw-proto` | — | 模块间通信协议（gRPC） |
-
-<DiagramFrame src="/diagram/frontier/corojaw.html" title="生产化：corojaw 模块结构（可交互）" />
-
-你会发现一件美妙的事：**我们第二章那个 `runLoop` 函数，在生产化后就是 `corojaw-loop` 一个独立服务**。核心没变，只是从「单进程里的一个函数」变成了「可独立扩展、独立部署的服务」。
-
-这是「从单机到云端」的本质：**不是重写，是拆解 + 放大**。
+语音场景下，agent 查资料卡 10 秒，用户会以为它坏了。所以语音 agent 的循环里要插入「填充」机制：查找时发出「嗯，我在查」的语音占位——**用流畅的在场感，掩盖后台的思考延迟**。核心循环没变，但「调用模型」和「执行工具」之间多了一层实时交互缓冲。
 
 ## 全景横评：一本书看过的所有 harness
 
-回顾全书的主案例，它们在同一套骨架上，各有侧重：
+回顾全书的主案例，它们在同一套骨架上各有侧重：
 
 | 项目 | 语言 | 本书用它讲什么 | 最突出的设计 |
 |------|------|--------------|-------------|
 | opencode | TS | 核心循环、多 agent | 简洁的消息循环 |
 | codex | Rust | 工具调用、沙箱 | 真隔离沙箱 + approval mode |
 | cc（Claude Code） | TS（还原） | 上下文、记忆 | 五级压缩 + 四层记忆 + Prompt 即编排 |
-| pi | TS | 循环、工具、权限 | `beforeToolCall` 权限钩子 |
+| pi | TS | 循环、工具、权限 | beforeToolCall 权限钩子 |
 | deepseek-harness | TS | 评测 | 按用户路径的 benchmark 体系 |
 | qwen-audio-agent | TS | 多模态 | Agent Presence |
 | corojaw | Java | 生产化 | 模块化微服务拆分 |
 
 这张表就是这本书的地图：**从「一个循环」出发，每一章给这个循环加装一种能力，最后长成能服务百万用户的系统。**
 
+## 实验：模块化拆分
+
+下面把「单文件」拆成「模块」，改「模块数」观察拆分粒度：
+
+export const feCode = [
+  "// 单文件：所有能力塞在一个函数里",
+  "function agent(request) {",
+  "  // 循环 + 工具 + 上下文 + 沙箱 全在这里",
+  "  return runLoop(request);",
+  "}",
+  "",
+  "// 模块化：拆成 [[moduleCount]] 个模块，各管一摊",
+  "const harness = {",
+  "  loop: { run: runLoop },        // 第 1 章 核心循环",
+  "  tools: { execute: executeTool }, // 第 2 章 工具调用",
+  "  context: { compact },          // 第 3 章 上下文",
+  "  sandbox: { check: permission }, // 第 4 章 沙箱",
+  "};",
+];
+
+export const feParams = [
+  { key: "moduleCount", label: "模块数", type: "number", defaultValue: "4", hint: "实验：改成 1，观察退化成单体；改成 4，观察职责分离" },
+];
+
+<CodeRunner
+  title="⚡ 实验：观察模块化拆分"
+  codeLines={feCode}
+  highlightMap={{ model_call: 0, model_reply: 0, tool_call: 0, tool_result: 0, done: 0, max_turns_reached: 0 }}
+  params={feParams}
+  defaultRequest="（模块化演示：展示拆分结构）"
+/>
+
 ## 小结
 
 - 前沿形态不是推翻核心循环，而是**换进出通道**（多模态）和**拆开放大**（生产化）。
-- 多模态语音 agent 的核心挑战是 **Agent Presence**——用流畅在场感掩盖后台延迟。
-- 生产化 = 把单进程的循环拆成**独立服务模块**（loop/model/session/tool...），核心不变，规模变大。
+- 多模态的核心挑战是 **Agent Presence**——用流畅在场感掩盖后台延迟。
+- 生产化 = 把单进程循环拆成**独立模块**（loop/tool/context/sandbox），核心不变，规模变大。
 - 全书的 harness 在同一套骨架上各有侧重——这就是 agent harness 的完整图景。
 
-## 练习
+## 练习（动手）
+
+1. 把 step-01~06 的代码，按 corojaw 的方式拆成 `loop/`、`tools/`、`context/`、`sandbox/` 四个模块目录。
+2. 给模块加「通信接口」：用 TypeScript 类型定义模块间的契约（像 corojaw 的 proto）。
+3. 思考：如果要把「语音」接入这个 harness，改动最小的地方在哪里？（提示：换 I/O 通道，不动循环）
 
 <Quiz questions={questions} />
 
 ## 延伸阅读
 
-- [qwen-audio-agent](https://github.com/QwenAudio/qwen-audio-agent)——实时语音 agent，Agent Presence 的设计（本地 `/Users/wenlix/project/qwen-audio-agent`）。
-- corojaw——Java 多模块生产化 harness（本地 `/Users/wenlix/workspace/corojaw`）。
-- 回到[全书目录](/)——顺着章节顺序重读一遍，会有新的理解。
+（章节链接待全书完成后统一补充）
