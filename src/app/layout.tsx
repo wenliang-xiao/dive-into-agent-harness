@@ -43,6 +43,12 @@ export default function RootLayout({
               <Link href="/" className="text-muted transition-colors hover:text-ink">
                 目录
               </Link>
+              <Link href="/progress" className="text-muted transition-colors hover:text-ink">
+                进度
+              </Link>
+              <Link href="/mistakes" className="text-muted transition-colors hover:text-ink">
+                错题本
+              </Link>
               <ThemeToggle />
             </nav>
           </div>
