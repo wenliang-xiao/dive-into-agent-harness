@@ -1,4 +1,5 @@
 import { Quiz } from "@/components/quiz";
+import { DiagramFrame } from "@/components/diagram-frame";
 import { getQuestions } from "@/lib/quiz/questions";
 
 export const questions = getQuestions("intro");
@@ -34,6 +35,8 @@ export const questions = getQuestions("intro");
 
 所以这本书讲的，就是**怎么给大模型套上缰绳**——消息循环、工具调用、上下文管理、沙箱、多 agent 编排……一层层加装，直到它能稳定地替你干活。
 
+<DiagramFrame src="/diagram/intro/harness-eli5.html" title="什么是 harness（零基础直觉）" />
+
 ## 机制层：一个最小 harness 长什么样
 
 抛开所有复杂概念，一个最小的 harness 核心只有十几行伪代码——一个循环：
@@ -56,6 +59,8 @@ while 还没结束:
 2. **执行工具**——真正去改文件、跑命令、查数据
 3. **回填结果**——把执行结果放回对话，让模型「看到」发生了什么
 4. **判断结束**——模型不再要求调工具，任务完成
+
+<DiagramFrame src="/diagram/loop/agent-loop.html" title="Agent 核心循环（可交互）" />
 
 真实 harness（opencode / Codex / Claude Code）都在这个循环之上，加装了工具系统、上下文管理、沙箱、多 agent 协作、评测可观测等能力——这正是本书后面七章要逐一拆开的东西。
 

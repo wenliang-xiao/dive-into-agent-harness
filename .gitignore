@@ -33,3 +33,8 @@ npm-debug.log*
 # 本地内容草稿（未定稿的章节/图）
 .draft/
 .archify/
+
+# archify 中间产物（receipt），保留 candidate.json 与 .html 产物
+diagrams/**/*.finalize*.json
+diagrams/**/*.browser-check*.json
+diagrams/**/*.delivery*.json

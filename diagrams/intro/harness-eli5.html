@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>什么是 harness？</title>
+<style>
+  :root {
+    --bg: #f7f5f2; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+    --accent: #4f46e5; --card: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121110; --ink: #e7e5e4; --muted: #a8a29e; --line: #292524;
+      --accent: #818cf8; --card: #1c1917;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px 24px;
+  }
+  h1 { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 20px; margin-bottom: 48px; }
+  .row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 40px 32px; text-align: center; min-width: 180px;
+  }
+  .card .emoji { font-size: 72px; line-height: 1; display: block; margin-bottom: 16px; }
+  .card .big { font-size: 28px; font-weight: 700; }
+  .card .small { color: var(--muted); font-size: 16px; margin-top: 8px; }
+  .arrow { font-size: 40px; color: var(--accent); font-weight: 700; }
+  .harness {
+    background: var(--accent); color: #fff; border-radius: 20px;
+    padding: 32px 24px; text-align: center; min-width: 160px;
+  }
+  .harness .emoji { font-size: 56px; display: block; margin-bottom: 8px; }
+  .harness .big { font-size: 26px; font-weight: 700; }
+  .note { margin-top: 48px; color: var(--muted); font-size: 16px; text-align: center; max-width: 560px; line-height: 1.7; }
+</style>
+</head>
+<body>
+  <h1>什么是 harness？</h1>
+  <p class="sub">把大模型「套上缰绳」，变成会干活的智能体</p>
+
+  <div class="row">
+    <div class="card">
+      <span class="emoji">🐴</span>
+      <div class="big">大模型</div>
+      <div class="small">能力很强<br>但只会「说话」</div>
+    </div>
+
+    <span class="arrow">+</span>
+
+    <div class="harness">
+      <span class="emoji">🧰</span>
+      <div class="big">harness</div>
+      <div class="small" style="color:#e0e0ff">缰绳 · 马具</div>
+    </div>
+
+    <span class="arrow">=</span>
+
+    <div class="card">
+      <span class="emoji">🤖</span>
+      <div class="big">智能体</div>
+      <div class="small">能改文件<br>能跑命令 · 能干活</div>
+    </div>
+  </div>
+
+  <p class="note">
+    大模型是「马」，力量大但不听使唤；<br>
+    harness 是「缰绳」，套上之后，它的力气就变成朝你要的方向的可控拉力。
+  </p>
+</body>
+</html>

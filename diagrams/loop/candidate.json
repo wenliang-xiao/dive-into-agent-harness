@@ -1,0 +1,47 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Agent 核心循环",
+    "subtitle": "一个 LLM + 一个消息循环 = 最简 agent",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/loop/agent-loop.html"
+  },
+  "lanes": [
+    { "id": "main", "label": "主循环" },
+    { "id": "exit", "label": "出口" }
+  ],
+  "states": [
+    { "id": "call", "type": "active", "label": "调用模型", "sublabel": "生成下一步", "lane": "main", "col": 0, "step": "01", "tag": "model", "width": 140 },
+    { "id": "judge", "type": "decision", "label": "判断", "sublabel": "要调工具吗？", "lane": "main", "col": 1, "step": "02", "tag": "check", "width": 132 },
+    { "id": "tool", "type": "active", "label": "执行工具", "sublabel": "改文件·跑命令", "lane": "main", "col": 2, "step": "03", "tag": "work", "width": 140 },
+    { "id": "append", "type": "active", "label": "回填结果", "sublabel": "放回对话", "lane": "main", "col": 3, "step": "04", "tag": "work", "width": 132 },
+    { "id": "answer", "type": "success", "label": "返回答案", "sublabel": "任务完成", "lane": "exit", "col": 1, "step": "05", "tag": "done", "width": 132 }
+  ],
+  "transitions": [
+    { "id": "t1", "from": "call", "to": "judge", "variant": "default" },
+    { "id": "t2", "from": "judge", "to": "tool", "label": "有工具调用", "variant": "emphasis" },
+    { "id": "t3", "from": "tool", "to": "append", "variant": "default" },
+    { "id": "t4", "from": "append", "to": "call", "label": "循环", "variant": "emphasis", "route": "top-channel" },
+    { "id": "t5", "from": "judge", "to": "answer", "label": "无工具调用·结束", "variant": "default", "route": "drop" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "四步心跳",
+      "items": [
+        "调用模型 → 执行工具 → 回填结果 → 判断结束",
+        "回填结果后再喂回模型，循环直到不再调工具"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "对应源码",
+      "items": [
+        "真实 harness 在这四步之上加装工具系统、上下文、沙箱等子系统",
+        "本书后续章节逐一拆解每一环"
+      ]
+    }
+  ]
+}
