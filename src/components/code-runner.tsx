@@ -220,9 +220,8 @@ export function CodeRunner({
         body: JSON.stringify({
           ...config,
           request,
-          systemPrompt: values.systemPrompt,
-          toolName: values.toolName,
-          maxTurns: Number(values.maxTurns),
+          ...values,
+          maxTurns: values.maxTurns ? Number(values.maxTurns) : undefined,
         }),
       });
       if (!res.ok || !res.body) throw new Error(`请求失败 ${res.status}`);

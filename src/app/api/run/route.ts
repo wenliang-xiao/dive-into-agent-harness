@@ -7,7 +7,7 @@ import { runLoop, calculatorTool, type Tool } from "@/lib/agent-loop";
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
-  const { baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns } =
+  const { baseUrl, apiKey, model, request, systemPrompt, toolName, maxTurns, requiredField, paramType } =
     body ?? {};
 
   if (!request || typeof request !== "string") {
@@ -17,11 +17,21 @@ export async function POST(req: Request) {
     });
   }
 
-  // 工具：执行查找名固定 calculator；declaredName 用 toolName（实验 3：拼错后模型调不到，观察错误兜住）
+  // 工具：执行查找名固定 calculator；declaredName 用 toolName（拼错后模型调不到，观察错误兜住）
+  // 参数 schema 可编辑：requiredField / paramType（观察参数校验）
+  const fieldName = requiredField ?? "expression";
   const tools: Tool[] = [
-    toolName
-      ? { ...calculatorTool, declaredName: toolName }
-      : calculatorTool,
+    {
+      ...calculatorTool,
+      ...(toolName ? { declaredName: toolName } : {}),
+      parameters: {
+        type: "object",
+        properties: {
+          [fieldName]: { type: paramType ?? "string", description: "数学表达式" },
+        },
+        required: [fieldName],
+      },
+    },
   ];
 
   const stream = new ReadableStream({

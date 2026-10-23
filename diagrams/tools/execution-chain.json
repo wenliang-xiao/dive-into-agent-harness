@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "工具调用：我们 4 步 = pi 的 5 函数",
+    "subtitle": "虚线是「对应关系」：我们的每一步，pi 用一个专职函数实现",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/tools/execution-chain.html"
+  },
+  "components": [
+    { "id": "declare", "type": "backend", "label": "声明", "sublabel": "JSON Schema 菜单", "pos": [60, 100], "size": [140, 56], "tag": "从零实现" },
+    { "id": "validate", "type": "backend", "label": "校验", "sublabel": "必填+类型检查", "pos": [60, 230], "size": [140, 56], "tag": "从零实现" },
+    { "id": "execute", "type": "backend", "label": "执行", "sublabel": "tool.execute", "pos": [60, 360], "size": [140, 56], "tag": "从零实现" },
+    { "id": "wrap", "type": "backend", "label": "封装", "sublabel": "错误 return 不崩溃", "pos": [60, 490], "size": [140, 56], "tag": "从零实现" },
+    { "id": "pi-entry", "type": "backend", "label": "executeToolCalls", "sublabel": "调度·顺序/并行", "pos": [400, 110], "size": [180, 56] },
+    { "id": "pi-prepare", "type": "backend", "label": "prepareToolCall", "sublabel": "找工具+校验+权限", "pos": [400, 260], "size": [180, 56] },
+    { "id": "pi-validate", "type": "backend", "label": "validateToolArguments", "sublabel": "参数校验", "pos": [680, 180], "size": [180, 56] },
+    { "id": "pi-run", "type": "backend", "label": "executePreparedToolCall", "sublabel": "真正调用 tool.execute", "pos": [680, 330], "size": [200, 56] },
+    { "id": "pi-result", "type": "backend", "label": "createToolResultMessage", "sublabel": "封装成 tool 消息", "pos": [680, 480], "size": [200, 56] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "我们：从零实现", "wraps": ["declare", "validate", "execute", "wrap"] },
+    { "kind": "region", "label": "pi：executeToolCalls 链路", "wraps": ["pi-entry", "pi-prepare", "pi-validate", "pi-run", "pi-result"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "declare", "to": "pi-prepare", "label": "对应·声明", "variant": "dashed" },
+    { "id": "c2", "from": "validate", "to": "pi-validate", "label": "对应·校验", "variant": "dashed" },
+    { "id": "c3", "from": "execute", "to": "pi-run", "label": "对应·执行", "variant": "dashed" },
+    { "id": "c4", "from": "wrap", "to": "pi-result", "label": "对应·封装", "variant": "dashed" },
+    { "id": "c5", "from": "pi-entry", "to": "pi-prepare", "label": "调度", "variant": "default" },
+    { "id": "c6", "from": "pi-prepare", "to": "pi-validate", "label": "校验", "variant": "default" },
+    { "id": "c7", "from": "pi-validate", "to": "pi-run", "label": "通过后执行", "variant": "default" },
+    { "id": "c8", "from": "pi-run", "to": "pi-result", "label": "封装", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "怎么读这张图",
+      "items": [
+        "虚线 = 对应关系：我们 4 步，pi 用哪个函数实现",
+        "pi 的 executeToolCalls 是「调度器」，负责判断顺序还是并行执行"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "pi 多出来的",
+      "items": [
+        "顺序/并行策略：多个工具能同时跑",
+        "beforeToolCall 权限检查：危险操作先拦截（下一章）"
+      ]
+    }
+  ]
+}
