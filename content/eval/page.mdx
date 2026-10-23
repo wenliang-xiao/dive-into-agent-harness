@@ -1,15 +1,104 @@
-## 动机
+import { Quiz } from "@/components/quiz";
+import { getQuestions } from "@/lib/quiz/questions";
 
-（本章内容写作中）
+export const questions = getQuestions("eval");
 
-## 直觉层
+## 动机：改了代码，怎么知道没改坏
 
-## 机制层
+harness 是基础设施。你改了核心循环、上下文压缩、会话存储——**怎么知道没把性能改坏？**
 
-## 源码层
+一个会话列表加载从 200ms 变成 2s，单个用户可能只感觉「有点卡」，但放大到百万用户就是灾难。评测（benchmark）和可观测（trace/telemetry）回答的就是这个问题：**给 harness 建立一套「体检」机制，性能回退能被量化地发现，而不是靠用户投诉。**
+
+注意区分：这一章测的是 **harness 本身**（循环、会话、IO 快不快、稳不稳），不是「模型聪不聪明」——那是另一个领域。
+
+## 直觉层：给 harness 做「体检」
+
+想象 harness 是台发动机，评测就是定期体检：
+
+- **测什么**：不是测「车跑得快不快」（那是模型的事），而是测「发动机本身转得顺不顺、耗不耗油」（循环、会话、内存）。
+- **怎么测**：固定工况、固定赛道，跑一遍计时。工况不固定，成绩就没法对比。
+- **体检报告**：每个指标有个「及格线」（预算），超了就是异常，要查原因。
+
+体检的难点在于「工况固定」——真实用户数据每天都在变，用真实数据测不出「这次和上次比」。所以要用**合成输入**（固定生成的数据）。
+
+## 机制层：一个极简的 benchmark
+
+看一个最小可用的性能测试——测「会话列表加载」的耗时，断言不超预算：
+
+```ts
+import { performance } from "node:perf_hooks";
+
+// 预算：首屏会话列表中位数不能超过 200ms
+const BUDGET_MS = 200;
+
+async function benchmarkSessionList(sampleCount = 100): Promise<{ median: number; pass: boolean }> {
+  const timings: number[] = [];
+
+  for (let i = 0; i < sampleCount; i++) {
+    const start = performance.now();
+    await session.list();        // 被测的「用户路径」
+    timings.push(performance.now() - start);
+  }
+
+  timings.sort((a, b) => a - b);
+  const median = timings[Math.floor(timings.length / 2)];
+
+  return { median, pass: median < BUDGET_MS };
+}
+```
+
+三个要点：
+
+1. **测「用户路径」**——不是测某个内部函数，而是测用户真正感知到的操作（`session.list`）。
+2. **多次采样取中位数**——单次耗时抖动大，中位数更稳。
+3. **预算断言**——`median < BUDGET_MS`，超了就失败，性能回退立刻暴露。
+
+## 源码层：deepseek-harness 的 benchmark 体系
+
+deepseek-harness 的 `benchmarks/AGENTS.md` 是一份成熟的评测方法论，值得逐条读。核心设计：
+
+### 按「用户路径」组织，而非按包结构
+
+```
+benchmarks/
+├── session-corpus/      # 会话列表 / 搜索 / fork 的性能
+├── conversation-fold/   # 对话折叠
+├── terminal-io/         # 终端 IO
+├── long-session-browser/# 长会话浏览器
+└── agent-continuation/  # agent 续跑
+```
+
+每个目录对应一条**用户能感知的路径**（「打开会话列表卡不卡」），而不是内部模块。这保证评测结果对用户有意义。
+
+### 合成输入 + 固定预算
+
+方法论里两条硬规则：
+
+- **「Synthesize fixed inputs from reviewed constants. Never use recorded Sessions, user material, ambient repositories, or network services.」**——用固定常量合成输入，不用真实 session、用户材料、外部网络。保证可复现。
+- **「Pass every budgeted wall-clock endpoint to `recordTimings`... before asserting it」**——每个计时端点先记录，再断言预算。预算是**写死的性能门槛**，环境变量不能覆盖。
+
+### 测量什么：wall-clock 和内存
+
+不只是计时。`recordPeakMemory` 记录**进程峰值 RSS**，还能在 cgroup 限制内存（4G/8G）下重跑（`test:bench:memory`），测内存压力下的表现。CPU 时间、内存、计时，三管齐下。
+
+### 报告可追溯
+
+每次跑产出 `.dsh-report/report.html`，记录参考机器、时间尺度、方差余量、每次采样的原始值。**每个结论都能追溯到数据**，不是「感觉变慢了」。
+
+> 对照 corojaw：云端 Java 多模块的 harness，它的「可观测」体现在 loop 模块的 trace/telemetry——把每次消息循环的耗时、工具调用、token 用量都打点，运行时能定位「哪一环慢」。评测（离线 benchmark）和可观测（在线 trace）是同一件事的两面：一个防回退，一个定位现场。
 
 ## 小结
 
+- 评测测的是 **harness 本身**的性能/稳定性，不是模型智商。
+- 三大原则：**按用户路径组织、合成输入保证可复现、预算断言防回退**。
+- 测量要**计时 + 内存**双维度，中位数比单次采样稳。
+- 评测（离线防回退）与可观测（在线 trace 定位）是同一件事的两面。
+
 ## 练习
 
+<Quiz questions={questions} />
+
 ## 延伸阅读
+
+- [deepseek-harness 的 benchmarks/AGENTS.md](https://github.com/wenliang-xiao/deepseek-harness/blob/main/benchmarks/AGENTS.md)（本地 `/Users/wenlix/project/deepseek-harness/benchmarks/AGENTS.md`）——本章源码层主素材。
+- [deepseek-harness BENCHMARK.md](https://github.com/wenliang-xiao/deepseek-harness/blob/main/BENCHMARK.md)——如何跑 benchmark。

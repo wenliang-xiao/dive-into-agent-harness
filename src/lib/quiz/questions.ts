@@ -197,6 +197,41 @@ const multiagentQuestions: Question[] = [
   },
 ];
 
+const evalQuestions: Question[] = [
+  {
+    id: "eval-1",
+    type: "single",
+    prompt: "harness 评测（benchmark）主要测什么？",
+    options: [
+      "harness 本身的性能/稳定性（循环、会话、IO 快不快、稳不稳）",
+      "大模型聪不聪明",
+      "代码写得好不好看",
+    ],
+    answer: [0],
+    explain: "harness 是基础设施，评测测它自己：会话列表、搜索、fork 等用户路径的耗时与内存。模型智商是另一回事。",
+  },
+  {
+    id: "eval-2",
+    type: "single",
+    prompt: "deepseek-harness 的 benchmark 为什么用「合成输入」而不是真实 session？",
+    options: ["确定性、可复现，且不用真实用户数据", "真实数据太贵", "合成数据更快"],
+    answer: [0],
+    explain: "合成输入由固定常量生成，每次跑都一样，能稳定对比性能；也不碰真实用户材料。",
+  },
+  {
+    id: "eval-3",
+    type: "single",
+    prompt: "benchmark 里的「预算（budget）」指什么？",
+    options: [
+      "性能阈值，超预算就判定失败",
+      "内存分配额度",
+      "API 调用次数限制",
+    ],
+    answer: [0],
+    explain: "预算 = 性能断言（如「首屏 list 中位数 < 200ms」），超了就失败。这是防止性能回退的门槛。",
+  },
+];
+
 export const questions: ChapterQuestions[] = [
   { chapterSlug: "intro", questions: introQuestions },
   { chapterSlug: "loop", questions: loopQuestions },
@@ -204,6 +239,7 @@ export const questions: ChapterQuestions[] = [
   { chapterSlug: "context", questions: contextQuestions },
   { chapterSlug: "sandbox", questions: sandboxQuestions },
   { chapterSlug: "multiagent", questions: multiagentQuestions },
+  { chapterSlug: "eval", questions: evalQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
