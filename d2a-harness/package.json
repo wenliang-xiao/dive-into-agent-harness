@@ -1,0 +1,14 @@
+{
+  "name": "d2a-mini-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "《动手学智能体框架》配套 mini-harness：每章从零实现一个 agent 机制，可运行、可改、可实验。",
+  "scripts": {
+    "step-01": "node --env-file=.env src/step-01-loop/main.ts",
+    "step-02": "node --env-file=.env src/step-02-tools/main.ts"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
