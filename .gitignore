@@ -1,0 +1,32 @@
+# 本地工具目录（严禁提交，见 openspec/AGENTS.md）
+.trellis/
+.pi/
+.claude/
+.opencode/
+.codex/
+
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+.next/
+out/
+dist/
+build/
+
+# 环境与密钥
+.env
+.env.*
+!.env.example
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统
+.DS_Store
+
+# 本地内容草稿（未定稿的章节/图）
+.draft/
+.archify/
