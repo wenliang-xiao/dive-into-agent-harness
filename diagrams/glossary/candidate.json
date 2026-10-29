@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "全书概念接地与依赖",
+    "subtitle": "箭头 = 前置依赖：写作 B 之前必须先接地 A",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/glossary/grounding.html"
+  },
+  "components": [
+    { "id": "harness", "type": "external", "label": "harness 智能体框架", "sublabel": "第0章 · 马具类比", "pos": [40, 300], "size": [150, 54] },
+    { "id": "stateless", "type": "backend", "label": "LLM 无状态函数", "sublabel": "第1章 · 根概念", "pos": [270, 300], "size": [150, 54] },
+    { "id": "messages", "type": "database", "label": "消息数组 = 状态", "sublabel": "第1章 · 根概念", "pos": [500, 300], "size": [150, 54] },
+    { "id": "loop", "type": "backend", "label": "核心循环", "sublabel": "第1章 · while + 回填", "pos": [730, 300], "size": [150, 54] },
+
+    { "id": "tool-schema", "type": "backend", "label": "工具声明", "sublabel": "第2章 · JSON Schema", "pos": [730, 120], "size": [150, 54] },
+    { "id": "permission", "type": "security", "label": "beforeToolCall 权限钩子", "sublabel": "第4章 · 执行前闸门", "pos": [970, 120], "size": [180, 54] },
+
+    { "id": "window", "type": "backend", "label": "上下文窗口", "sublabel": "第3章 · Context Rot", "pos": [500, 480], "size": [150, 54] },
+    { "id": "worker", "type": "backend", "label": "worker 独立上下文", "sublabel": "第5章 · Isolate 落地", "pos": [720, 480], "size": [150, 54] },
+    { "id": "benchmark", "type": "backend", "label": "benchmark", "sublabel": "第6章 · 测 harness 本身", "pos": [970, 480], "size": [150, 54] },
+    { "id": "budget", "type": "backend", "label": "预算断言", "sublabel": "第6章 · 超预算失败", "pos": [970, 660], "size": [150, 54] },
+
+    { "id": "prod", "type": "cloud", "label": "生产化 · 模块拆分", "sublabel": "第7章 · 回收全书", "pos": [960, 300], "size": [160, 54] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "harness", "to": "stateless", "label": "预告 → 推导" },
+    { "id": "c2", "from": "stateless", "to": "messages" },
+    { "id": "c3", "from": "messages", "to": "loop" },
+    { "id": "c4", "from": "loop", "to": "tool-schema", "label": "调用模型传声明", "variant": "emphasis" },
+    { "id": "c5", "from": "tool-schema", "to": "permission", "label": "执行前校验" },
+    { "id": "c6", "from": "messages", "to": "window", "label": "状态有上限" },
+    { "id": "c7", "from": "messages", "to": "worker", "label": "独立消息数组", "variant": "dashed" },
+    { "id": "c8", "from": "window", "to": "worker", "label": "Isolate" },
+    { "id": "c9", "from": "loop", "to": "prod", "label": "拆开放大" },
+    { "id": "c10", "from": "worker", "to": "benchmark", "label": "测 harness 本身" },
+    { "id": "c11", "from": "benchmark", "to": "budget", "label": "超预算失败" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "怎么读这张图",
+      "items": [
+        "箭头 = 前置依赖：写作 B 章之前，B 依赖的概念必须先接地",
+        "根基三条（无状态函数 / 消息数组 = 状态 / 核心循环）是全书基石",
+        "第7章「生产化」回收前六章全部能力"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Grounding 规则",
+      "items": [
+        "每个概念先接地再用，不能「前面没讲过、后面也补不上」",
+        "第0章只能预告，不能把后续章节概念当作已知",
+        "跨章概念（如 Isolate）落地处标注「回收第3章」"
+      ]
+    }
+  ]
+}
