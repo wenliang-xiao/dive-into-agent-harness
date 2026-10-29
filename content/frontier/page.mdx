@@ -1,5 +1,4 @@
 import { Quiz } from "@/components/quiz";
-import { DiagramFrame } from "@/components/diagram-frame";
 import { CodeRunner } from "@/components/code-runner";
 import { getQuestions } from "@/lib/quiz/questions";
 
@@ -10,7 +9,7 @@ export const questions = getQuestions("frontier");
 前面六章，我们讲的都是「一个单进程里的 agent」。但真实世界里的 agent 有两种更复杂的形态：
 
 - **多模态**：不只有文字，还有语音、图像——像 qwen-audio-agent 这样的实时语音 agent。
-- **云端生产化**：从你本地的单进程 harness，变成服务百万用户的分布式系统——像 xiaoaiclaw、coro。
+- **云端生产化**：从你本地的单进程 harness，变成服务百万用户的分布式系统——像 openclaw。
 
 这一章看这两个「前沿」形态，并做一次全书的全景回顾。
 
@@ -51,20 +50,20 @@ function createHarness(loop, tools, context, sandbox) {
 
 模块化后，模块间通过**接口**通信，而不是共享一个文件——这是「拆开」的关键：每个模块能独立开发、独立扩展、独立部署。
 
-## 对照基准：corojaw 的模块拆分 + 多模态的 Agent Presence
+## 对照基准：openclaw 的生产化架构 + 多模态的 Agent Presence
 
-**生产化对照**：corojaw（Java）把一个 harness 拆成了清晰的模块，每个模块对应我们前面的一章：
+**生产化对照**：openclaw（开源 TS）把一个 harness 拆成了清晰的层次，每层对应我们前面的一章：
 
-<DiagramFrame src="/diagram/frontier/corojaw.html" title="corojaw 模块结构（可交互）" />
-
-| corojaw 模块 | 对应本书章节 |
+| openclaw 组件 | 对应本书章节 |
 |-------------|-------------|
-| `corojaw-loop` | 第 1 章 核心循环 |
-| `corojaw-tool` | 第 2 章 工具调用 |
-| `corojaw-context` / `corojaw-session` | 第 3 章 上下文 |
-| `corojaw-gateway` / `corojaw-proto` | 入口 + 模块通信 |
+| Gateway（控制平面：sessions / tools / events） | 第 1 章 核心循环 |
+| Channels（20+ 渠道接入：Discord / Telegram / Slack…） | 第 2 章 工具调用 + I/O 通道 |
+| Models / agent harnesses（Claude / Codex / local，可插拔） | 第 5 章 多 agent 编排 |
+| pairing / 审批（DM 配对 approve） | 第 4 章 沙箱与安全 |
 
-你会发现：**我们第 1 章那个 `runLoop` 函数，生产化后就是 `corojaw-loop` 一个独立服务**。核心没变，只是从「单进程函数」变成了「可独立扩展的服务」。
+你会发现：**我们第 1 章那个 `runLoop` 函数，生产化后就是 openclaw 的 Gateway 一个独立服务**。核心没变，只是从「单进程函数」变成了「可独立部署的控制平面」。
+
+openclaw 有个设计特别点题：**One Gateway——个人笔记本上当助手，团队部署时当共享服务，唯一区别是配置**。这正是「从个人工具到基础设施」的完美注脚：同一个 harness，换配置就能从「单机」长成「云端」。
 
 **多模态对照**：qwen-audio-agent 是实时语音 agent，核心设计是 **Agent Presence**：
 
@@ -84,7 +83,7 @@ function createHarness(loop, tools, context, sandbox) {
 | pi | TS | 循环、工具、权限 | beforeToolCall 权限钩子 |
 | deepseek-harness | TS | 评测 | 按用户路径的 benchmark 体系 |
 | qwen-audio-agent | TS | 多模态 | Agent Presence |
-| corojaw | Java | 生产化 | 模块化微服务拆分 |
+| openclaw | TS | 生产化 | Gateway + Channels + plugins，个人/团队同一套 |
 
 这张表就是这本书的地图：**从「一个循环」出发，每一章给这个循环加装一种能力，最后长成能服务百万用户的系统。**
 
@@ -129,8 +128,8 @@ export const feParams = [
 
 ## 练习（动手）
 
-1. 把 step-01~06 的代码，按 corojaw 的方式拆成 `loop/`、`tools/`、`context/`、`sandbox/` 四个模块目录。
-2. 给模块加「通信接口」：用 TypeScript 类型定义模块间的契约（像 corojaw 的 proto）。
+1. 把 step-01~06 的代码，按 openclaw 的方式拆成 Gateway（循环）+ Channels（I/O）+ plugins（工具）三层。
+2. 给模块加「通信接口」：用 TypeScript 类型定义模块间的契约（像 openclaw 的 plugin 接口）。
 3. 思考：如果要把「语音」接入这个 harness，改动最小的地方在哪里？（提示：换 I/O 通道，不动循环）
 
 <Quiz questions={questions} />

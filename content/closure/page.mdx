@@ -1,0 +1,235 @@
+import { Quiz } from "@/components/quiz";
+import { CodeRunner } from "@/components/code-runner";
+import { getQuestions } from "@/lib/quiz/questions";
+
+export const questions = getQuestions("closure");
+
+## 动机：agent 越用越强，数据从哪来？
+
+前面八章都在回答一个问题：**harness 怎么让模型干活**。核心循环、工具、上下文、沙箱、多 agent、评测、生产化——全部围绕「运行期」。
+
+这一章反过来问：**干活的过程本身值不值钱？**
+
+答案：值钱，而且非常值钱。agent 每跑一次，都会留下一条**轨迹（trajectory）**——它每一步想了什么、调了什么工具、看到了什么结果。这条轨迹有两个归宿，都是全书的地基：
+
+1. **它喂给训练**：训练下一代 agent 模型（GRPO/PPO 这类 RL），喂的就是这些「状态 → 动作 → 结果」的采样序列。换句话说，**harness 不只是「跑 agent」，它是「生产训练数据的机器」**。
+2. **它决定部署**：agent 的请求有鲜明的特征——多轮对话、前缀稳定、工具等待、上下文只增不减。这些特征**直接决定推理层怎么优化**（KV cache 复用、缓存感知路由、PD 分离）。
+
+所以这一章的命题是：**agent = LLM + harness，而 harness 的上游是算法与模型、下游是推理与训练，三层贯通成一个闭环。**
+
+## 直觉层：一个飞轮
+
+先别管细节，看这个大图景——agent 生态是个**飞轮**：
+
+1. **agent 跑** → 每一步「想（think）→ 做（act）→ 看（observe）」被 harness 记录下来，形成 trajectory
+2. **trajectory** → 这些轨迹是高质量的行为数据，喂给 RL 训练
+3. **训练** → 训练出更强、更会调工具、更少犯错的下一代模型
+4. **部署** → 更强的模型需要高效的推理部署（PD 分离、KV cache 复用）才能又快又便宜地跑
+5. **跑得更好** → 更好的 agent 产生更高质量的 trajectory → 回到第 2 步
+
+一圈比一圈强。**harness 是这个飞轮里唯一贯穿始终的角色**：它既生产数据（轨迹），又消费部署（推理），还是模型能力落地的载体。
+
+这就是为什么「只懂模型」或「只懂 harness」都不完整——真正的 agent 工程师，要能看全这个闭环。
+
+## 根源理解：三个推论，串起「训练」和「部署」
+
+从「agent 是一个循环」这个第 1 章的结论出发，能推出三个东西。
+
+### 1. trajectory = 马尔可夫链的采样
+
+第 1 章证明了：agent 的状态 = 消息数组，循环 = 反复「喂回 + 调用」。把循环的每一步拆开看：
+
+```
+状态 state     →  动作 action     →  观察 observation
+消息数组        →  工具调用        →  工具结果
+```
+
+这就是**马尔可夫决策过程（MDP）**的一次采样。RL 训练 agent 模型，需要的正是成百上千万条这样的（状态，动作，结果，奖励）序列。**trajectory 不是副产品，是训练的直接原料。**
+
+### 2. 为什么必须「结构化地」输出
+
+为什么不直接把日志塞给训练？三个理由：
+
+- **可复现**：第 6 章的评测要求「这次和上次比」，轨迹格式不固定就比不了。
+- **可当训练数据**：RL 要成对的（状态，动作，奖励），散落的日志里这些是断开的。
+- **可跨 harness 对齐**：不同 harness 产出的轨迹，要能放进同一个评测集 / 训练集。业界已有标准格式——比如 AgentEval 的 **Canonical 格式**：一条 trajectory 就是一个消息数组，`system/user/assistant/toolResult` 四种角色，`text/thinking/toolCall` 三种内容块，每条消息带 `stopReason`（模型为什么停）和 `usage`（token 用量）。
+
+### 3. trajectory 怎么变成「训练」
+
+这是「数据生产」和「训练」之间的关键一环。harness 跑一次 agent，就叫一次 **rollout**——产生一条完整轨迹。RL 训练的大致流程：
+
+1. **rollout**：harness 让当前模型跑一个任务，产生轨迹，并给轨迹打一个**奖励（reward）**（任务成没成、调了几次工具、花了多少 token）。
+2. **比较**：GRPO（Group Relative Policy Optimization）这类算法不单独训练一个 critic 模型，而是**采一组轨迹、比它们之间的相对优劣**——好的轨迹抬高概率，差的压低。省显存、更稳。
+3. **更新**：根据比较结果，让模型更倾向「产生高奖励轨迹」的行为。
+
+这里有两个 harness 层的重要细节：
+
+- **rollout 的速度决定训练速度**：训练要采海量轨迹，rollout 本身也是一次次模型调用。**投机采样（speculative decoding）在 RL rollout 里能直接复用**——训练跑 rollout 同样受益于「草稿模型提议、主模型验证」。
+- **rollout correction / TIS**：如果训练时模型做了量化（如 FP8），推理时也用不同精度，会产生**分布漂移**——训练出的策略和线上跑的对不上。所以要保证训练侧和推理侧的量化配置一致，否则轨迹数据「货不对板」。
+
+一句话：**harness 的 rollout 质量，直接决定训练数据的质量。**
+
+### 4. harness 的架构特征，直接决定推理部署的优化方向
+
+agent 请求和普通单轮请求有三个关键差异：
+
+| agent 请求特征 | 推理层怎么响应 |
+|---------------|---------------|
+| **多轮对话，前缀稳定**（system prompt、工具定义每次一样） | **KV cache 前缀复用**：相同前缀只 prefill 一次，缓存感知路由把请求送到「已缓存前缀」的实例 |
+| **工具等待**（调完工具模型要等结果，中间 GPU 空闲） | **会话缓存下沉**：不活跃会话的 KV 从 GPU 沉到 Host/L3，释放显存，续推前再恢复 |
+| **上下文只增不减**（每次回填，窗口越来越长） | **分桶 + Chunked Prefill**：长短请求分池，长 prefill 切块与 decode 交错，避免拖慢 |
+
+一句话：**harness 怎么组织对话，推理层就怎么优化缓存和调度。**
+
+## 从零实现：把循环序列化成 trajectory
+
+第 1 章我们写了循环，第 6 章写了评测。这一章加的能力是：**把循环产生的消息流，序列化成结构化的 trajectory**。完整代码在 `d2a-harness/src/step-08-closure/trajectory.ts`，零依赖：
+
+```ts
+// 一条 trajectory = 一个消息数组（对齐 AgentEval Canonical 格式）
+export type CanonicalMessage = {
+  role: "system" | "user" | "assistant" | "toolResult";
+  content: ContentBlock[] | string;   // assistant 用块数组，toolResult 用字符串
+  toolCallId?: string;                 // toolResult 用它关联回 toolCall
+  metadata: { roundIndex: number; stopReason?: "toolUse" | "endTurn" | "maxTokens" };
+};
+
+// 序列化：把循环的消息数组翻译成跨 harness 对齐的格式
+export function serializeTrajectory(messages: Message[], events: TraceEvent[]) {
+  const turnCount = messages.filter((m) => m.role === "assistant").length;
+  const stopped = events.some((e) => e.type === "max_turns_reached");
+  return {
+    messages: messages.map(/* 拆成 text 块 + toolCall 块 + toolResult 扁平结构 */),
+    turnCount,                                        // ① 轮数
+    stopReason: stopped ? "maxTokens" : "endTurn",    // ② 确切停止条件
+    finalAnswer: /* 最后一条 assistant 的 content */, // ③ 最终答案
+  };
+}
+```
+
+核心洞察：**序列化不是「额外记录」，而是把第 1 章那个消息数组翻译成标准格式。** harness 循环本来就在维护完整的消息数组，序列化只是给它一个「跨 harness 对齐」的形状——让它能复现、能评测、能当训练数据。
+
+注意 `stopReason` 这个字段：它是轨迹**可复现**的关键。一条轨迹是「模型答完了」（endTurn）还是「轮数上限被截断」（maxTokens），决定了这条数据能不能进训练集——被截断的轨迹是不完整的行为，训练时要单独处理。
+
+## 对照基准：主案例 deepseek-harness × V4.1，以及真实的轨迹和部署
+
+### ① 主案例：deepseek-harness 为什么「配合 V4.1」
+
+第 6 章我们看过 deepseek-harness 的 benchmark 体系：**按用户路径组织、合成输入可复现、预算断言防回退**。这一章补上它更本质的一面：**harness 不是通用框架，是顺着模型特性设计的。**
+
+DeepSeek V4.1 是一个特性鲜明的模型：**稀疏注意力**（DSA/CSA/HCA，面向百万上下文的结构化降本）、**MoE**（万亿参数、激活少）、**多 token 预测**（MTP，服务投机解码）。这些模型结构，直接决定了 harness 怎么评测它：
+
+| V4.1 的模型特性 | harness 要配合做什么 |
+|----------------|---------------------|
+| 稀疏注意力（DSA/CSA/HCA） | 长上下文评测要验证「稀疏检索 + 全局压缩」的准确率不掉 |
+| 1M 上下文 | benchmark 要覆盖超长会话路径，而长 prompt 恰恰是 prefill 成本大头 |
+| MTP（多 token 预测） | 评测投机解码的接受率，因为它影响 decode 吞吐 |
+
+**这就是「harness 与模型耦合」的实证**：一个评测 harness 该测什么、怎么测，不是 harness 自己说了算，而是模型的注意力结构、上下文长度、投机解码能力决定的。脱离模型谈 harness 设计，是空谈。
+
+### ② 真实轨迹：Canonical 格式长什么样
+
+下面是 AgentEval 平台 Canonical 格式的一条多轮轨迹骨架（已精简，隐去具体厂商）。对照我们序列化的结构，看它多了什么：
+
+```jsonc
+[
+  { "role": "user", "content": [{ "type": "text", "text": "我们边上有什么水上乐园吗" }],
+    "metadata": { "roundIndex": 0 } },
+  { "role": "assistant", "content": [
+      { "type": "thinking", "thinking": "用户在导航途中...先搜附近..." },  // ← 我们的 Message 没有 thinking
+      { "type": "text", "text": "<explanation>搜一下附近水上乐园</explanation>" },
+      { "type": "toolCall", "id": "call_0437", "name": "web_search",
+        "arguments": { "name": "SearchNearby", "params": {...} } }
+    ],
+    "metadata": { "roundIndex": 0, "model": "<provider>/<model>",
+      "stopReason": "toolUse",                                     // ← 模型还要调工具
+      "usage": { "inputTokens": 12625, "cacheReadTokens": 80448,   // ← 前缀命中缓存！
+                 "outputTokens": 301, "totalTokens": 93374 } } },
+  { "role": "toolResult", "toolCallId": "call_0437", "toolName": "web_search",
+    "content": "{\"code\":\"200\",\"data\":{\"items\":[]}}", "isError": false,
+    "metadata": { "roundIndex": 0 } }
+  // ...再调 SearchPoi → 拿结果 → 最终 assistant stopReason=stop 结束
+]
+```
+
+三个我们「从零实现」里没有、但真实轨迹里必须有的东西：
+
+1. **`thinking` 块**：推理模型的「思考过程」是轨迹的一部分（对应「Reasoning Content 一定要回传，否则影响模型能力」）。
+2. **`stopReason` 全程标注**：每一步是 `toolUse`（继续）还是 `stop`（结束），训练时靠它切分「完整轨迹」和「半截轨迹」。
+3. **`usage.cacheReadTokens`**：这个字段是「harness 可观测」和「推理层 KV cache 复用」的**桥梁**——`cacheReadTokens: 80448` 说明 system prompt 前缀命中了缓存，没有重复 prefill。
+
+### ③ 推理部署：PD 分离 + KV cache 亲和路由
+
+前面说「harness 特征决定推理优化」。落地到生产，是两个机制：
+
+**PD 分离（Prefill-Decode Disaggregation）**。Prefill 和 Decode 的资源画像不同：prefill 处理整个输入 prompt，是 **compute-bound**；decode 逐 token 生成、反复读 KV cache，是 **memory-bandwidth-bound**。把它们混在一个池子里，长 prefill 会拖慢 decode，decode 占着 KV cache 会挤掉新请求。PD 分离把两者拆到**不同的资源池**，各自配置、各自扩缩容——代价是 prefill 产生的 KV cache 要**传输**给 decode（bootstrap 协议）。
+
+**KV cache 亲和路由**。普通负载均衡只关心「哪个实例空」，但 agent 请求的成本取决于「实例里已经有什么 KV cache」。缓存感知路由的评分公式：
+
+```
+score(worker) = matchWeight × prefix_match_percentage − normalized_load
+```
+
+把 prompt 拆成 token 块 → 每块算链式哈希（前缀敏感）→ 在 Radix Tree 里查每个块被哪些实例缓存 → 统计「连续匹配块数」得前缀匹配率，再减去归一化负载。**缓存命中高 + 负载低 = 得分高 = 优先选。**
+
+这跟 agent 有什么关系？agent 的 system prompt、工具定义、多轮历史前缀高度稳定——同一个 agent 的请求天然前缀相似。**缓存亲和路由就是为 agent 这种 workload 量身定做的。**
+
+## 实验：跑一个循环，看它的 trajectory 三要素
+
+下面这段是「采集轨迹」的骨架。改 `maxTurns`，点「运行」，观察 **turn count / stop condition / final answer** 三个要素怎么变：
+
+export const closureCode = [
+  "// 采集轨迹：跑循环的同时，序列化成 trajectory",
+  "const trajectory = await collectTrajectory(request, tools, {",
+  "  maxTurns: [[maxTurns]],",
+  "});",
+  "",
+  "// ① turn count —— 循环转了几圈（= assistant 消息条数）",
+  "trajectory.turnCount;",
+  "",
+  "// ② stop condition —— 怎么停的：endTurn / maxTokens",
+  "trajectory.stopReason;",
+  "",
+  "// ③ final answer —— 最终答案",
+  "trajectory.finalAnswer;",
+];
+
+export const closureParams = [
+  { key: "maxTurns", label: "maxTurns（轮数上限）", type: "number", defaultValue: "10", hint: "实验：改成 1，观察 stopReason 从 endTurn 变成 maxTokens" },
+];
+
+<CodeRunner
+  title="⚡ 实验：跑一个循环，观察 trajectory 三要素"
+  codeLines={closureCode}
+  highlightMap={{ model_call: 1, model_reply: 1, tool_call: 1, tool_result: 1, done: 1, max_turns_reached: 1 }}
+  params={closureParams}
+  defaultRequest="帮我算一下 123 * 456 等于多少"
+/>
+
+## 小结
+
+- **trajectory 不是副产品，是数据生产**：harness 的轨迹输出 = 可观测马尔可夫链 = RL 训练下一代 agent 的原料。
+- **飞轮闭环**：agent 跑 → trajectory → RL 训练 → 更强模型 → 高效部署（PD 分离 / KV cache）→ 跑得更好。
+- **rollout 是训练与 harness 的接口**：harness 跑一次 agent 就是一次 rollout；rollout 的速度、量化一致性（rollout correction）直接决定训练数据质量。
+- **harness 与模型耦合**：deepseek-harness 顺着 V4.1 的稀疏注意力 / 1M 上下文 / MTP 来设计评测——脱离模型谈 harness 是空谈。
+- **harness 与推理耦合**：多轮稳定前缀 → KV cache 复用；工具等待 → 会话缓存下沉；上下文增长 → 分桶 + Chunked Prefill。
+- **stopReason 是轨迹的灵魂**：它区分「完整轨迹」和「半截轨迹」，决定数据能不能进训练集。
+
+## 练习（动手）
+
+> 下面的练习就是这一章的**可自测 check 清单**——做完能自己验证「真的懂了」。
+
+1. **跑通序列化**：在 `d2a-harness` 里跑 `npm run step-08`，确认输出里 turn count、stopReason、finalAnswer 三者齐全。
+2. **答出 stop condition**：把 `maxTurns` 改成 1 再跑，你能答出这条轨迹的 stopReason 是什么、为什么它**不能**直接进训练集吗？
+3. **补 thinking 块**：给 `serializeTrajectory` 加一个 `thinking` 内容块（哪怕先塞个空字符串占位），体会「真实轨迹多出来的字段」到底服务什么。
+4. **讲清 rollout 和训练的关系**：用自己的话说：为什么「投机采样在 RL rollout 里能复用」？rollout 慢，训练会怎样？
+5. **找 cacheReadTokens**：翻回上面的真实轨迹 JSON，找到 `usage.cacheReadTokens`，解释它为什么能证明「harness 可观测」和「推理 KV cache」是同一件事的两面。
+
+<Quiz questions={questions} />
+
+## 延伸阅读
+
+- 《AgentEval 平台 Trajectory 格式说明》—— Canonical 格式的完整字段定义。
+- 《大模型推理性能优化：从模型结构到系统调度》—— TTFT/TPOT/goodput 六层全景，含 PD 分离、缓存感知路由。
+- ai-engineering-from-scratch / Phase 14 —— Agent Observability、Agent Benchmarks 等课，作为「轨迹→评测→训练」的对照。
+- 论文：DistServe、Splitwise（PD 分离）；Mooncake、Preble（缓存感知路由）；DeepSeek V3.2 / DSA（稀疏注意力）。

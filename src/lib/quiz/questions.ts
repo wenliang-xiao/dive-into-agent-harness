@@ -32,6 +32,15 @@ const introQuestions: Question[] = [
     explain:
       "工具调用 = 模型发出「要调用工具」的信号，harness 执行并回填结果。其余两个只是普通文本生成。",
   },
+  {
+    id: "intro-order-1",
+    type: "order",
+    prompt: "核心循环的四个步骤，正确的先后顺序是？",
+    items: ["执行工具", "调用模型", "判断结束", "回填结果"],
+    answer: [1, 0, 3, 2],
+    explain:
+      "核心循环四步：①调用模型 → ②执行工具 → ③回填结果 → ④判断结束。回填是关键：不把结果喂回，模型就卡死在同一步。",
+  },
 ];
 
 const loopQuestions: Question[] = [
@@ -58,6 +67,16 @@ const loopQuestions: Question[] = [
     options: ["判断是否还有工具调用，决定循环继续还是结束", "记录调用了多少次模型", "缓存工具执行结果", "控制模型温度"],
     answer: [0],
     explain: "`hasMoreToolCalls = !executedToolBatch.terminate`——只要还有工具调用没处理完，内层循环就继续。",
+  },
+  {
+    id: "loop-fill-1",
+    type: "fill",
+    prompt: "补全核心循环代码中挖空的两个关键标识符：",
+    template:
+      "for (let turn = 0; turn < maxTurns; turn++) {\n  const reply = await callLLM(messages);\n  messages.___(reply);\n  if (reply.___.length === 0) return messages;\n}",
+    blanks: ["push", "tool_calls"],
+    explain:
+      "reply 要 push 回消息数组（回填结果）；tool_calls 为空表示模型不再调工具，循环结束。",
   },
 ];
 
@@ -94,6 +113,15 @@ const toolsQuestions: Question[] = [
     answer: [0],
     explain: "结果是 tool 角色消息，带 tool_call_id 与原始调用对应，这样模型能知道「这个结果对应我哪次调用」。",
   },
+  {
+    id: "tools-order-1",
+    type: "order",
+    prompt: "工具调用的处理链路，正确的先后顺序是？",
+    items: ["执行并封装结果", "声明 JSON Schema", "校验参数", "解析参数"],
+    answer: [1, 3, 2, 0],
+    explain:
+      "链路：声明(Schema) → 解析参数 → 校验 → 执行+封装。声明在前（模型要知道有工具），封装在后（错误回传不崩）。",
+  },
 ];
 
 const contextQuestions: Question[] = [
@@ -129,6 +157,15 @@ const contextQuestions: Question[] = [
     answer: [0, 1, 2, 3],
     explain: "四类是 user/feedback/project/reference。注意：代码模式、git 历史、调试方案这类「能从项目状态推导出的信息」明确不保存。",
   },
+  {
+    id: "context-fill-1",
+    type: "fill",
+    prompt: "补全「压缩」的本质（填两个关键词）：",
+    template: "压缩 = 用「___」替换原文，保留 ___、丢弃细节，用信息密度换空间。",
+    blanks: ["摘要", "信息"],
+    explain:
+      "压缩是「摘要替换原文」：保留信息（关键结论）、丢弃细节（中间过程）。这区别于「删除」——删除丢信息，压缩保关键。",
+  },
 ];
 
 const sandboxQuestions: Question[] = [
@@ -159,6 +196,15 @@ const sandboxQuestions: Question[] = [
     options: ["它执行的命令可能有破坏性（如 rm -rf）", "它可能误删文件", "模型输出不可信，可能被 prompt injection 劫持", "它跑得不够快"],
     answer: [0, 1, 2],
     explain: "agent 的强大来自「能执行」，但这也意味着破坏力。加上模型输出不可信、可能被注入劫持，必须用沙箱/权限兜底。",
+  },
+  {
+    id: "sandbox-order-1",
+    type: "order",
+    prompt: "执行一个工具调用前，正确的处理顺序是？",
+    items: ["真正执行工具", "解析参数", "权限检查（beforeToolCall）", "校验参数"],
+    answer: [1, 3, 2, 0],
+    explain:
+      "执行前顺序：解析参数 → 校验参数 → 权限检查 → 真正执行。权限闸门设在「执行之前、校验之后」。",
   },
 ];
 
@@ -195,6 +241,15 @@ const multiagentQuestions: Question[] = [
     answer: [0],
     explain: "隔离上下文 = 子 agent 的探索、试错、中间过程都在自己的窗口里，主 agent 只拿到结论，避免 Context Rot。",
   },
+  {
+    id: "multiagent-fill-1",
+    type: "fill",
+    prompt: "补全多 agent 的核心价值（填两个关键词）：",
+    template: "worker 有独立的「___」；dispatchWorker 返回 worker 的 ___，不是全过程。",
+    blanks: ["消息数组", "最终输出"],
+    explain:
+      "worker 有独立的消息数组（独立状态），主 agent 只拿 worker 的最终结论——探索、试错都留在子窗口里。",
+  },
 ];
 
 const evalQuestions: Question[] = [
@@ -230,6 +285,15 @@ const evalQuestions: Question[] = [
     answer: [0],
     explain: "预算 = 性能断言（如「首屏 list 中位数 < 200ms」），超了就失败。这是防止性能回退的门槛。",
   },
+  {
+    id: "eval-fill-1",
+    type: "fill",
+    prompt: "补全 benchmark 的三大原则（填两个关键词）：",
+    template: "三大原则：按用户路径组织、___ 输入可复现、___ 断言防回退。",
+    blanks: ["合成", "预算"],
+    explain:
+      "合成输入保证可复现（真实数据每天变），预算断言把性能门槛写死（超了就失败）。",
+  },
 ];
 
 const frontierQuestions: Question[] = [
@@ -248,22 +312,74 @@ const frontierQuestions: Question[] = [
   {
     id: "frontier-2",
     type: "single",
-    prompt: "corojaw 为什么拆成 gateway / loop / model / session / tool 多个模块？",
+    prompt: "openclaw 为什么拆成 Gateway / Channels / plugins 多个层次？",
     options: [
-      "生产化：各职责独立开发、独立扩展、独立部署",
+      "生产化：各职责独立开发、独立扩展、独立部署（个人/团队同一套）",
       "纯粹为了代码好看",
-      "因为 Java 强制要求",
+      "因为 TypeScript 强制要求",
     ],
     answer: [0],
-    explain: "云端 harness 要服务海量用户，把循环、模型、会话、工具拆成独立服务，才能各自扩展、独立升级。",
+    explain: "openclaw 把循环（Gateway）、渠道（Channels）、模型/工具（plugins）拆开，个人笔记本和团队部署只差配置——这正是生产化的意义。",
   },
   {
     id: "frontier-3",
     type: "single",
-    prompt: "这本书讲的核心循环，在云端生产化 harness 里对应哪个模块？",
-    options: ["loop 模块", "gateway 模块", "proto 模块"],
+    prompt: "这本书讲的核心循环，在 openclaw 的生产化架构里对应哪个组件？",
+    options: ["Gateway（控制平面）", "Channels（渠道）", "plugins（插件）"],
     answer: [0],
-    explain: "第二章的「消息循环」在生产化后就是 corojaw 的 loop 模块——核心没变，只是从单进程函数变成了独立服务。",
+    explain: "核心循环（消息数组 + while 循环）在生产化后就是 openclaw 的 Gateway——核心没变，只是从单进程函数变成了独立控制平面。",
+  },
+  {
+    id: "frontier-order-1",
+    type: "order",
+    prompt: "生产化把单进程循环拆成模块，按本书章节顺序排列：",
+    items: ["context（上下文）", "loop（核心循环）", "tool（工具调用）", "sandbox（沙箱）"],
+    answer: [1, 2, 0, 3],
+    explain:
+      "模块顺序对应章节：第 1 章 loop → 第 2 章 tool → 第 3 章 context → 第 4 章 sandbox。生产化只是拆开部署边界，循环逻辑不变。",
+  },
+];
+
+const closureQuestions: Question[] = [
+  {
+    id: "closure-1",
+    type: "single",
+    prompt: "agent 跑一次留下的 trajectory，在 RL 训练里扮演什么角色？",
+    options: [
+      "可观测的马尔可夫链，是训练下一代 agent 模型的原料",
+      "日志，只是为了调试方便",
+      "成本账单，只用来算钱",
+    ],
+    answer: [0],
+    explain: "trajectory = state→action→observation 的采样序列，正是 RL（GRPO/PPO）训练要的（状态，动作，奖励）数据。它是数据生产，不是副产品。",
+  },
+  {
+    id: "closure-2",
+    type: "single",
+    prompt: "一条 trajectory 的 stopReason=endTurn 和 maxTokens 有什么区别？",
+    options: [
+      "endTurn 是模型答完，maxTokens 是轮数上限被截断",
+      "完全一样，只是命名不同",
+      "endTurn 表示出错，maxTokens 表示成功",
+    ],
+    answer: [0],
+    explain: "endTurn=模型自己停了（完整轨迹）；maxTokens=轮数上限截断（半截轨迹）。被截断的轨迹行为不完整，训练时要单独处理——这正是 stopReason 字段存在的意义。",
+  },
+  {
+    id: "closure-3",
+    type: "multiple",
+    prompt: "harness 为什么要把 trajectory 结构化地输出？（可多选）",
+    options: ["可复现，评测时能「这次和上次比」", "可当训练数据，RL 要成对的状态-动作-奖励", "可跨 harness 对齐，放进同一个评测/训练集", "结构化后模型跑得更快"],
+    answer: [0, 1, 2],
+    explain: "结构化输出服务三个目标：可复现、可训练、可对齐。它不会让模型跑得更快——那是推理部署的事。",
+  },
+  {
+    id: "closure-fill-1",
+    type: "fill",
+    prompt: "补全飞轮闭环的两个关键词：",
+    template: "agent 跑 → 产生 ___ → RL 训练 → 更强模型 → 高效部署（PD 分离 / KV cache）→ 跑得更好。",
+    blanks: ["trajectory"],
+    explain: "trajectory 是闭环的原料：agent 跑出轨迹，轨迹喂给训练，训练出更强模型，更强模型配合高效部署跑得更好。",
   },
 ];
 
@@ -276,6 +392,7 @@ export const questions: ChapterQuestions[] = [
   { chapterSlug: "multiagent", questions: multiagentQuestions },
   { chapterSlug: "eval", questions: evalQuestions },
   { chapterSlug: "frontier", questions: frontierQuestions },
+  { chapterSlug: "closure", questions: closureQuestions },
 ];
 
 export function getQuestions(slug: string): Question[] {
