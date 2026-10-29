@@ -12,7 +12,7 @@ export default function Home() {
     <div className="mx-auto max-w-5xl px-5 py-12">
       <section className="mb-12 border-b border-line pb-10">
         <p className="text-sm font-medium uppercase tracking-widest text-muted">
-          Dive into Agent Harness · d2a.ai
+          Dive into Agent Harness
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
           动手学智能体框架

@@ -3,7 +3,7 @@
 > 一本**交互式学习网站**：教你 **agent harness**——把 LLM 变成 agent 的那层框架，并贯通上游（算法与模型）与下游（推理部署、RL 训练闭环）。
 > 方法论对标李沐《动手学深度学习》(D2L)：**可运行代码 + 由浅入深 + 边学边动手**。
 
-网站：`dive-into-agent-harness-nwyqapil7-wenlix.vercel.app`（`d2a.ai` 为未来正式域名）
+网站：`dive-into-agent-harness.vercel.app`（站外节点，国内访问需配合 VPN）
 
 > **9 章 · 11 张可探索图解 · Next.js / TypeScript** — 免费、开源、MIT。
 
@@ -12,7 +12,7 @@
   <a href="#contents"><img src="https://img.shields.io/badge/chapters-9-3553ff?style=flat-square&labelColor=fafaf5" alt="9 chapters"></a>
   <a href="#contents"><img src="https://img.shields.io/badge/diagrams-11-3553ff?style=flat-square&labelColor=fafaf5" alt="11 diagrams"></a>
   <a href="https://github.com/wenliang-xiao/dive-into-agent-harness/stargazers"><img src="https://img.shields.io/github/stars/wenliang-xiao/dive-into-agent-harness?style=flat-square&labelColor=fafaf5&color=3553ff" alt="GitHub stars"></a>
-  <a href="https://dive-into-agent-harness-nwyqapil7-wenlix.vercel.app"><img src="https://img.shields.io/badge/web-vercel.app-3553ff?style=flat-square&labelColor=fafaf5" alt="Website"></a>
+  <a href="https://dive-into-agent-harness.vercel.app"><img src="https://img.shields.io/badge/web-vercel.app-3553ff?style=flat-square&labelColor=fafaf5" alt="Website"></a>
 </p>
 
 ## 为什么做这个
@@ -66,7 +66,7 @@
 
 ## 怎么学
 
-**在网站上**：打开 [dive-into-agent-harness-nwyqapil7-wenlix.vercel.app](https://dive-into-agent-harness-nwyqapil7-wenlix.vercel.app) 直接读章节、看图解、跑实验，无需 clone。
+**在网站上**：打开 [dive-into-agent-harness.vercel.app](https://dive-into-agent-harness.vercel.app) 直接读章节、看图解、跑实验，无需 clone。
 
 > ⚠️ 国内访问需挂 VPN：Vercel 无中国大陆节点，`*.vercel.app` 域名国内被 DNS 污染（见 [DEPLOY.md](./DEPLOY.md) 第 3 节的自定义域名方案）。
 

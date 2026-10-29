@@ -11,7 +11,7 @@
 | 项 | 名字 |
 |----|------|
 | 书名 | 《动手学智能体框架》（英文 Dive into Agent Harness） |
-| 网站 | `d2a.ai`（Dive into Agents，呼应李沐 `d2l.ai`） |
+| 网站 | `dive-into-agent-harness.vercel.app` |
 | 项目 repo | `wenliang-xiao/dive-into-agent-harness` |
 
 ## 定位与差异化
