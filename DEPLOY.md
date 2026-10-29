@@ -27,9 +27,11 @@ vercel --prod    # 生产部署
 
 读者打开网站后，点右上角「⚙️ API」，填自己的：
 
-- **Base URL**：任意 OpenAI 兼容接口（如 `http://model.mify.ai.srv/v1/`、`https://api.openai.com/v1`）
+- **Base URL**：任意**公网可达**的 OpenAI 兼容接口（如 `https://api.deepseek.com/v1`、`https://api.openai.com/v1`）
 - **模型**：任意支持 function calling 的模型名
 - **API Key**：读者自己的 key
+
+> ⚠️ 注意：`/api/run` 运行在 Vercel 服务器上，Base URL 必须是**公网地址**（Vercel 能访问到）。内网地址（如 `model.mify.ai.srv`）仅本地开发时可用。
 
 配置存读者浏览器 localStorage，仅用于发起实验请求，由 `/api/run` 薄代理同源转发到 LLM（绕过浏览器 CORS），**key 不经过、不落服务器**。
 
