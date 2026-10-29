@@ -87,6 +87,33 @@ cc 的多 agent 协调者有个惊人的设计——**编排逻辑不是代码�
 
 一句话总结：我们写的「协调者 + worker + 独立上下文」，就是 cc Coordinator Mode 的骨架。cc 的特殊之处，是把「编排」本身也交给了 prompt（而非代码），并把分工硬编码进工具集。
 
+## 编排的鲁棒性：durable execution
+
+多 agent 编排有个隐藏的痛点：worker 跑着跑着挂了——进程崩溃、网络超时、任务被取消。如果编排逻辑是「跑完就完」，整个任务得重来，已经完成的 side effect（比如已经改好的文件）还要重做一遍。
+
+**durable execution（持久执行）** 解决的就是这个：
+
+- 把编排建模成**状态机 / 图**：节点是函数（调用 worker、执行工具），边是转换。
+- 每个节点完成后 **checkpoint** 一次状态。
+- 从任何失败点**恢复**，从最后一个成功 checkpoint 继续，**不重做已确认的 side effect**。
+
+对应到我们的 `coordinator`：现在它是「派发 → 等结果 → 汇总」，挂了就没了。加上 checkpoint 后，每个 worker 完成就记录一次，挂了从最后一个完成的 worker 继续，不用重派已经完成的。素材里的 durable-harness 就是这个思路的专门实现。
+
+一句话：**多 agent 编排从「跑完就完」进化到「随时可恢复」，靠的是把编排从「函数调用」升级成「可 checkpoint 的状态机」。**
+
+## 算法变体：为什么它们需要「架构承载」
+
+第 1 章的核心循环是 **ReAct**（边想边做）。但 agent 的「思考策略」不止这一种，而它们的区别**不在 prompt，在于 harness 要提供什么架构支撑**：
+
+| 算法 | 核心思想 | harness 要提供的架构 |
+|------|---------|---------------------|
+| ReAct | 边想边做（interleave） | 一个循环 + 消息数组（第 1 章） |
+| ReWOO | plan 和 execute 分离 | 规划阶段 + 执行阶段，两个阶段 |
+| Reflexion | 失败后写「反思」再试 | 试错循环 + 记忆写入（反思存进记忆） |
+| ToT / LATS | 树状搜索 + 回退 | 树状状态管理 + 节点回退 |
+
+关键洞察：**这些算法不是「换个 prompt」就能跑，它们需要 harness 提供不同的架构承载**——ReWOO 要阶段分离、Reflexion 要记忆写入、ToT 要树状回退。这就是「agent = LLM + harness」的完整含义：算法是上层，harness 是承载它的架构。只懂算法不懂 harness，算法跑不起来；只懂 harness 不懂算法，不知道 harness 该承载什么。
+
 ## 实验：改并行/串行，观察 worker 调度
 
 下面跑协调者派发两个 worker，改「并行 or 串行」观察 trace：
@@ -128,12 +155,15 @@ export const maParams = [
 - 协调者与 worker 通过**工具集隔离**：管理类 vs 执行类。
 - cc 的「**Prompt 即编排**」：编排算法写在 prompt 里，而非代码 DAG——大胆但有风险。
 - 多 agent 是上下文工程 **Isolate** 策略的落地。
+- 多 agent 编排要「随时可恢复」：durable execution 用状态机 + checkpoint 把「函数调用」升级成「可恢复的图」。
+- 算法变体（ReWOO/Reflexion/ToT）的区别在 harness 架构承载，不是 prompt——算法是上层，harness 是承载。
 
 ## 练习（动手）
 
 1. 给 `coordinator` 加「依赖」：子任务 3 依赖子任务 1、2 的结果，必须等它们完成再跑。
 2. 实现「验收」：worker 返回结论后，协调者用模型判断「干得好不好」，不好就重派。
 3. 对比「并行」和「串行」的耗时（用 `performance.now()` 计时）。
+4. **check 清单（自测）**：① 能答出 durable execution 为什么需要 checkpoint（而非「跑完就完」）；② 能说出 ReWOO / Reflexion / ToT 各自需要 harness 提供什么架构支撑；③ 能实现「worker 完成即 checkpoint，挂了从最后 checkpoint 续跑」的伪代码。
 
 <Quiz questions={questions} />
 
