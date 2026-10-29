@@ -71,6 +71,20 @@ openclaw 有个设计特别点题：**One Gateway——个人笔记本上当助�
 
 语音场景下，agent 查资料卡 10 秒，用户会以为它坏了。所以语音 agent 的循环里要插入「填充」机制：查找时发出「嗯，我在查」的语音占位——**用流畅的在场感，掩盖后台的思考延迟**。核心循环没变，但「调用模型」和「执行工具」之间多了一层实时交互缓冲。
 
+## MCP：让工具变成「可插拔的生态」
+
+多模态换的是「进出通道」，生产化拆的是「部署边界」，还有第三个前沿方向：**工具怎么互操作**。
+
+每个 harness 都要接工具——文件、数据库、浏览器、API。过去每个 harness 自己写一遍接入代码，工具多了就失控。**MCP（Model Context Protocol）**是 Anthropic 2024 提出的开放协议，把「工具接入」标准化：
+
+- harness 是 **MCP client**，工具提供方是 **MCP server**。
+- server 用统一协议暴露三种东西：**tools**（可调用的工具）、**resources**（可读取的数据）、**prompts**（提示模板）。
+- client 通过协议发现、调用这些能力，不关心 server 内部怎么实现。
+
+意义在于「生态」：**一个 MCP server 写一次，所有支持 MCP 的 harness（opencode、codex、cc…）都能接**。工具不再绑定某个 harness，而是变成可插拔的组件——这正是前沿形态的第三个方向：**从「写工具」到「接生态」。**
+
+这跟前面两章呼应：第 2 章的工具调用是「单个 harness 怎么执行工具」，MCP 是「工具怎么跨 harness 复用」——一个是机制，一个是生态。
+
 ## 全景横评：一本书看过的所有 harness
 
 回顾全书的主案例，它们在同一套骨架上各有侧重：
@@ -125,12 +139,14 @@ export const feParams = [
 - 多模态的核心挑战是 **Agent Presence**——用流畅在场感掩盖后台延迟。
 - 生产化 = 把单进程循环拆成**独立模块**（loop/tool/context/sandbox），核心不变，规模变大。
 - 全书的 harness 在同一套骨架上各有侧重——这就是 agent harness 的完整图景。
+- MCP（Model Context Protocol）把工具接入标准化：harness 是 client，工具是 server，写一次处处复用——工具从「绑定」变成「生态」。
 
 ## 练习（动手）
 
 1. 把 step-01~06 的代码，按 openclaw 的方式拆成 Gateway（循环）+ Channels（I/O）+ plugins（工具）三层。
 2. 给模块加「通信接口」：用 TypeScript 类型定义模块间的契约（像 openclaw 的 plugin 接口）。
 3. 思考：如果要把「语音」接入这个 harness，改动最小的地方在哪里？（提示：换 I/O 通道，不动循环）
+4. **check 清单（自测）**：① 能说出前沿的三种「长大」方式（换通道/拆边界/接生态）各对应什么；② 能解释 MCP 的 client-server 架构里，harness 和工具各是什么角色；③ 能说出 MCP 与第 2 章「工具调用」的区别（机制 vs 生态）。
 
 <Quiz questions={questions} />
 
