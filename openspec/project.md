@@ -42,11 +42,9 @@
 | pi-agent | 开源 | TS | 对照案例（沙箱 / 安全） |
 | deepseek-harness | 开源 | TS/Python | 主案例（第 6 章评测 benchmark / 第 9 章训练与部署闭环：配合 DeepSeek V4.1 的耦合案例） |
 | durable-harness | 开源 | TS | 对照案例（durable execution，第 5 章多 agent 编排） |
-| openclaw | 开源 | TS | 对照案例 |
+| openclaw | 开源 | TS | 前沿（生产化）对照案例 |
 | hermes（hermes-investment） | 内部 | Python | 对照案例 |
 | qwen-audio-agent | 开源 | TS | 前沿（多模态 agent） |
-| xiaoaiclaw | 云端 | TS | 前沿（生产化） |
-| corojaw | 云端 | Java | 前沿（生产化，gateway/loop/model/session/tool 多模块） |
 
 > cc 的素材来源：《Claude code 代码泄露》飞书深度分析（40 工具 / 101 指令 / Agent Loop / Context Engineering / Memory / 工具系统）+ 其附录完整版《Claude-Code-Harness 技术深度分析.md》。
 
@@ -62,9 +60,9 @@ D2L 的演进逻辑是「模型越来越强」，映射为「agent 能力越来�
 | CNN（处理结构） | 上下文与记忆：上下文窗口 / compaction / 检索 / 文件系统 | cc | opencode |
 | RNN（时序序列） | 沙箱与安全：命令隔离 / 权限 / 审批流 | codex | pi |
 | 注意力机制（选择性关注） | 多 agent 编排：subagent / 任务分解 / 并行 | opencode | cc Task |
-| 优化算法（衡量/调优） | 评测与可观测：benchmark / trace / telemetry / 成本 | deepseek-harness | corojaw |
-| Transformer（前沿） | 前沿与生产：多模态 / MCP 生态 / 云端生产化 | xiaoaiclaw / coro | 全景横评 |
-| 计算性能与部署（闭环） | 训练与部署闭环：trajectory 可观测 / RL 训练 / PD 分离 | deepseek-harness | corojaw / xiaoaiclaw |
+| 优化算法（衡量/调优） | 评测与可观测：benchmark / trace / telemetry / 成本 | deepseek-harness | openclaw |
+| Transformer（前沿） | 前沿与生产：多模态 / MCP 生态 / 云端生产化 | openclaw / qwen-audio-agent | 全景横评 |
+| 计算性能与部署（闭环） | 训练与部署闭环：trajectory 可观测 / RL 训练 / PD 分离 | deepseek-harness | openclaw / qwen-audio-agent |
 
 ## 每章结构（对标 D2L 细节程度）
 
