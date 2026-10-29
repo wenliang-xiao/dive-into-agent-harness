@@ -1,9 +1,5 @@
-import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("multiagent");
 
 ## 动机：单 agent 有极限
 
@@ -164,8 +160,6 @@ export const maParams = [
 2. 实现「验收」：worker 返回结论后，协调者用模型判断「干得好不好」，不好就重派。
 3. 对比「并行」和「串行」的耗时（用 `performance.now()` 计时）。
 4. **check 清单（自测）**：① 能答出 durable execution 为什么需要 checkpoint（而非「跑完就完」）；② 能说出 ReWOO / Reflexion / ToT 各自需要 harness 提供什么架构支撑；③ 能实现「worker 完成即 checkpoint，挂了从最后 checkpoint 续跑」的伪代码。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

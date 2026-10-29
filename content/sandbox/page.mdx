@@ -1,9 +1,5 @@
-import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("sandbox");
 
 ## 动机：能力越大，破坏力越大
 
@@ -173,8 +169,6 @@ export const sandboxParams = [
 2. 实现「审批流」：危险操作（如参数含 `rm`）返回「需要人工确认」，让循环暂停等待输入。
 3. 把权限检查做成「嵌套调用也生效」——让工具调工具时也过同一道闸门。
 4. **check 清单（自测）**：① 能说出「间接 prompt injection」和「直接注入」的区别；② 能解释为什么 agent 的「读数据」和「执行指令」是同一个通道、这让注入难以防御；③ 能设计一个「把不可信数据标记为 data 而非 instruction」的隔离方案。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

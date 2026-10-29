@@ -1,9 +1,5 @@
-import { Quiz } from "@/components/quiz";
 import { DiagramFrame } from "@/components/diagram-frame";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("context");
 
 ## 动机：窗口有限，内容无限
 
@@ -181,8 +177,6 @@ export const ctxParams = [
 2. 实现一个「真正的摘要压缩」：调用模型把最早的历史总结成一段摘要（而不是截断）。
 3. 在 `compact` 里加「熔断器」：连续压缩失败 3 次就停。
 4. **check 清单（自测）**：① 能答出 cc 的四类记忆（user/feedback/project/reference）为什么是「文件指令系统」而非「向量库」；② 能说出向量/图/KV 三个存储各自擅长什么检索；③ 能判断一个场景该用「显式文件指令」还是「隐式混合检索」。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

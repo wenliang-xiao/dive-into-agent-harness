@@ -18,9 +18,9 @@ export default function Home() {
           动手学智能体框架
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          一本交互式书 + 刷题平台，教你 <strong className="text-ink">agent harness</strong>
+          一本交互式学习网站，教你 <strong className="text-ink">agent harness</strong>
           ——把大模型变成 agent 的那层框架。方法论对标李沐《动手学深度学习》：
-          可运行代码、由浅入深、边学边练。
+          可运行代码、由浅入深、边学边动手。
         </p>
         <div className="mt-6 flex flex-wrap gap-2 text-sm">
           <Link

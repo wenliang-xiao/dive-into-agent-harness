@@ -1,16 +1,15 @@
 # 动手学智能体框架 · Dive into Agent Harness
 
-> 一本**交互式书 + 刷题平台**：教你 **agent harness**——把 LLM 变成 agent 的那层框架，并贯通上游（算法与模型）与下游（推理部署、RL 训练闭环）。
-> 方法论对标李沐《动手学深度学习》(D2L)：**可运行代码 + 由浅入深 + 边学边练**。
+> 一本**交互式学习网站**：教你 **agent harness**——把 LLM 变成 agent 的那层框架，并贯通上游（算法与模型）与下游（推理部署、RL 训练闭环）。
+> 方法论对标李沐《动手学深度学习》(D2L)：**可运行代码 + 由浅入深 + 边学边动手**。
 
 网站：`d2a.ai`（致敬 `d2l.ai`）
 
-> **9 章 · 36 道题 · 11 张可探索图解 · Next.js / TypeScript** — 免费、开源、MIT。
+> **9 章 · 11 张可探索图解 · Next.js / TypeScript** — 免费、开源、MIT。
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1a1a1a?style=flat-square&labelColor=fafaf5" alt="MIT License"></a>
   <a href="#contents"><img src="https://img.shields.io/badge/chapters-9-3553ff?style=flat-square&labelColor=fafaf5" alt="9 chapters"></a>
-  <a href="#contents"><img src="https://img.shields.io/badge/questions-36-3553ff?style=flat-square&labelColor=fafaf5" alt="36 questions"></a>
   <a href="#contents"><img src="https://img.shields.io/badge/diagrams-11-3553ff?style=flat-square&labelColor=fafaf5" alt="11 diagrams"></a>
   <a href="https://github.com/wenliang-xiao/dive-into-agent-harness/stargazers"><img src="https://img.shields.io/github/stars/wenliang-xiao/dive-into-agent-harness?style=flat-square&labelColor=fafaf5&color=3553ff" alt="GitHub stars"></a>
   <a href="https://d2a.ai"><img src="https://img.shields.io/badge/web-d2a.ai-3553ff?style=flat-square&labelColor=fafaf5" alt="Website"></a>
@@ -27,9 +26,9 @@
 - 📖 **全书 9 章**：对标 D2L 的递进式结构（引言 → 核心循环 → 工具调用 → 上下文 → 沙箱 → 多 agent → 评测 → 前沿 → 训练与部署闭环）
 - 🧩 **分层表达**：每个概念覆盖直觉层（无代码图示）/ 机制层（核心代码）/ 源码层（真实 harness 精读），服务全人群读者
 - 🎨 **可探索图解**：11 张 archify 交互式 HTML 图（lifecycle / workflow / architecture），深/浅主题、可导出
-- ✅ **刷题闭环**：36 道题，多邻国式即时反馈 + 粉笔式错题本 + 连续打卡 + 学习进度
+- ⚡ **在线实验**：每章末的「实验」可在线改参数、真实跑核心循环，SSE 流式观察 trace（读者自带 API key，不落服务器）
 - 🔍 **源码溯源**：每个结论追到 `文件:行号`（pi / deepseek-harness 源码 + cc source map 还原）
-- 🚀 **可运行**：演示代码 + 真实源码 trace，边学边练
+- 🚀 **纯静态**：无数据库、无账号、无登录，一键部署 Vercel
 
 <a id="contents"></a>
 
@@ -47,7 +46,7 @@
 | 7 | 前沿与生产：多模态 / MCP 生态 / 云端生产化 | openclaw / qwen-audio-agent | 全景横评 | 实验 |
 | 8 | 训练与部署闭环：trajectory 可观测 / RL 训练 / PD 分离 | deepseek-harness | openclaw / qwen-audio-agent | 实验 |
 
-> 每章七段式结构：①动机 → ②直觉层 → ③机制层 → ④源码层 → ⑤小结 → ⑥练习/刷题 → ⑦延伸阅读。
+> 每章七段式结构：①动机 → ②直觉层 → ③机制层 → ④源码层 → ⑤小结 → ⑥练习/动手实验 → ⑦延伸阅读。
 
 ## 交互式体验
 
@@ -61,20 +60,15 @@
 
 > 图示不是装饰，而是服务零代码读者的刚需——直觉层读者只看图也能懂。
 
-### 刷题闭环
+### 在线实验
 
-36 道题覆盖全部 9 章，每章末有即时反馈的测验（单选 / 多选 / 排序 / 填空），配合错题本与连续打卡：
-
-```bash
-npm install
-npm run dev        # http://localhost:3000，边读边刷
-```
+每章末的「实验」可在线改参数（轮数上限 / 系统提示 / 工具名 / 子任务等），真实跑一遍核心循环，左侧代码逐行高亮、右侧 SSE 流式打印 trace。读者在右上角「⚙️ API」填自己的 LLM key（存浏览器 localStorage），无需 clone、无需本地起服务。
 
 ## 怎么学
 
-**在网站上**：打开 [d2a.ai](https://d2a.ai) 直接读章节、跑演示、刷题，无需 clone。
+**在网站上**：打开 [d2a.ai](https://d2a.ai) 直接读章节、看图解、跑实验，无需 clone。
 
-**本地运行**：clone 下来跑 `npm run dev`，刷题数据存本地 SQLite（无需配置）。
+**本地运行**：clone 下来跑 `npm run dev` 即可，零配置、零数据库。
 
 **参与贡献**：按 Spec-Driven Development（OpenSpec）协作，见下方「贡献」。
 
@@ -87,17 +81,15 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-本地不设 `DATABASE_URL` 时，刷题数据存本地 SQLite（`data/d2a.db`），零配置即可跑。
-
 ## 部署
 
-见 [DEPLOY.md](./DEPLOY.md)——Vercel 一键部署 + Turso 托管数据库 + 绑定 `d2a.ai`。
+见 [DEPLOY.md](./DEPLOY.md)——Vercel 一键部署（纯静态 + 无状态薄代理），无需数据库。
 
 ## 目录结构
 
 ```text
 content/            # 章节（MDX，七段式结构）+ 术语表
-src/                # 书站前端（Next.js）+ 数据层 + API
+src/                # 书站前端（Next.js）+ /api/run 薄代理
 diagrams/           # archify 可探索图（candidate + 产物）
 openspec/           # 单一事实来源（规格 / 决策 / 变更）
 scripts/            # 工具脚本（视觉验证等）

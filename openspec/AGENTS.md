@@ -55,5 +55,5 @@
 
 1. `openspec new change <name>` 建变更提案，写 proposal / design / tasks。
 2. 评审通过后按 tasks 逐条实现（可 trellis `channel` 并行）。
-3. 实现 + 自测（章节跑通渲染、刷题可用）。
+3. 实现 + 自测（章节跑通渲染、实验可用）。
 4. 提交时带上规格文档更新，完成后 `openspec archive <name>`。

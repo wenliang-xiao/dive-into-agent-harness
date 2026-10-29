@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "动手学智能体框架 · Dive into Agent Harness",
   description:
-    "一本交互式书 + 刷题平台，教你 agent harness——把 LLM 变成 agent 的那层框架。",
+    "一本交互式学习网站，教你 agent harness——把 LLM 变成 agent 的那层框架。",
 };
 
 export default function RootLayout({
@@ -44,12 +44,6 @@ export default function RootLayout({
               <nav className="flex items-center gap-3 text-sm">
                 <Link href="/" className="text-muted transition-colors hover:text-ink">
                   目录
-                </Link>
-                <Link href="/progress" className="text-muted transition-colors hover:text-ink">
-                  进度
-                </Link>
-                <Link href="/mistakes" className="text-muted transition-colors hover:text-ink">
-                  错题本
                 </Link>
                 <RunnerConfigButton />
                 <ThemeToggle />

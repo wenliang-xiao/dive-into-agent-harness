@@ -1,11 +1,11 @@
 # 部署指南（Deploy）
 
-本书是 Next.js 应用，支持一键部署到 Vercel，并绑定 `d2a.ai`。
+本书是纯静态学习网站 + 一个无状态薄代理（`/api/run`），一键部署到 Vercel。**无需任何数据库、账号或外部服务。**
 
 ## 0. 前置
 
 - 一个 Vercel 账号（可用 GitHub 登录）
-- 一个 Turso 账号（托管 SQLite，免费额度，用于刷题数据持久化）
+- 读者的 LLM API key（读者在浏览器里填自己的 key，key 只存读者本地浏览器，不落服务器）
 
 ## 1. 部署到 Vercel
 
@@ -13,10 +13,7 @@
 
 1. 打开 https://vercel.com/new ，导入 `wenliang-xiao/dive-into-agent-harness`
 2. 框架自动识别为 Next.js，直接 Deploy
-3. 部署完成后，在 Vercel 项目 Settings → Environment Variables 配置：
-   - `DATABASE_URL`：Turso 数据库地址（`libsql://...`）
-   - `DATABASE_AUTH_TOKEN`：Turso auth token
-4. 重新 Deploy（或 Redeploy）使环境变量生效
+3. 完成。无需配置任何环境变量。
 
 **方式 B：CLI**
 
@@ -26,23 +23,23 @@ vercel           # 首次部署，按提示关联项目
 vercel --prod    # 生产部署
 ```
 
-## 2. 创建 Turso 数据库
+## 2. 在线跑实验（读者视角）
 
-```bash
-npm i -g turso
-turso auth signup
-turso db create d2a
-turso db show d2a       # 拿到 URL（libsql://...）
-turso db tokens create d2a   # 拿到 auth token
-```
+读者打开网站后，点右上角「⚙️ API」，填自己的：
 
-把 URL 和 token 填到 Vercel 环境变量 `DATABASE_URL`、`DATABASE_AUTH_TOKEN`。
+- **Base URL**：任意 OpenAI 兼容接口（如 `http://model.mify.ai.srv/v1/`、`https://api.openai.com/v1`）
+- **模型**：任意支持 function calling 的模型名
+- **API Key**：读者自己的 key
 
-## 3. 绑定域名 d2a.ai
+配置存读者浏览器 localStorage，仅用于发起实验请求，由 `/api/run` 薄代理同源转发到 LLM（绕过浏览器 CORS），**key 不经过、不落服务器**。
 
-1. 购买 `d2a.ai` 域名（任意域名商）
-2. Vercel 项目 → Settings → Domains → Add `d2a.ai`
-3. 按 Vercel 提示在域名商处添加 DNS 记录（A 记录或 CNAME）
+## 3. 绑定自定义域名（可选）
+
+`*.vercel.app` 部署域名在国内网络下可能不稳定，建议绑定自定义域名 + Cloudflare 托管：
+
+1. 在 Vercel 项目 → Settings → Domains → Add 你的域名
+2. 域名 DNS 用 Cloudflare 托管，A/CNAME 记录指向 Vercel
+3. 拿到 `d2a.eu.org` 这类免费域名（eu.org 需人工审核）后即可替换
 
 ## 4. 本地开发（无需部署）
 
@@ -51,18 +48,10 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-本地不设 `DATABASE_URL` 时，自动使用本地 SQLite（`data/d2a.db`），无需任何配置。
+本地开发无需任何环境变量。若要本地跑通 `/api/run`，可在浏览器「⚙️ API」里填自己的 key；或临时 export `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL` 供服务端默认值使用（勿提交到 git）。
 
-## 5. 数据库说明
+## 5. 架构说明
 
-- **本地**：better-sqlite3，文件 `data/d2a.db`（已 gitignore）
-- **部署**：设置 `DATABASE_URL` 后切 Turso（托管 SQLite，drizzle-orm/libsql）
-- 两者共用同一套 drizzle schema，切换无需改代码
-- 选型决策见 `openspec/decisions/0001-turso-managed-sqlite.md`
-
-## 6. 从本地迁移数据到 Turso（可选）
-
-```bash
-# 本地 data/d2a.db 是标准 SQLite，可直接用 turso 导入
-turso db shell d2a < dump.sql
-```
+- **纯静态**：全部章节 MDX 在构建时预渲染为静态 HTML（`/chapter/<slug>`）。
+- **薄代理**：`/api/run` 是唯一动态路由，无状态、无存储，仅做同源转发 + SSE 流式 trace。
+- **无数据库 / 无账号 / 无登录**：刷题闭环已整体移除（见 `openspec/changes/remove-quiz-static-site/`）。

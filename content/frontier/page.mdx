@@ -1,8 +1,4 @@
-import { Quiz } from "@/components/quiz";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("frontier");
 
 ## 动机：从「个人工具」到「基础设施」
 
@@ -147,8 +143,6 @@ export const feParams = [
 2. 给模块加「通信接口」：用 TypeScript 类型定义模块间的契约（像 openclaw 的 plugin 接口）。
 3. 思考：如果要把「语音」接入这个 harness，改动最小的地方在哪里？（提示：换 I/O 通道，不动循环）
 4. **check 清单（自测）**：① 能说出前沿的三种「长大」方式（换通道/拆边界/接生态）各对应什么；② 能解释 MCP 的 client-server 架构里，harness 和工具各是什么角色；③ 能说出 MCP 与第 2 章「工具调用」的区别（机制 vs 生态）。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

@@ -1,8 +1,4 @@
-import { Quiz } from "@/components/quiz";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("closure");
 
 ## 动机：agent 越用越强，数据从哪来？
 
@@ -224,8 +220,6 @@ export const closureParams = [
 3. **补 thinking 块**：给 `serializeTrajectory` 加一个 `thinking` 内容块（哪怕先塞个空字符串占位），体会「真实轨迹多出来的字段」到底服务什么。
 4. **讲清 rollout 和训练的关系**：用自己的话说：为什么「投机采样在 RL rollout 里能复用」？rollout 慢，训练会怎样？
 5. **找 cacheReadTokens**：翻回上面的真实轨迹 JSON，找到 `usage.cacheReadTokens`，解释它为什么能证明「harness 可观测」和「推理 KV cache」是同一件事的两面。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

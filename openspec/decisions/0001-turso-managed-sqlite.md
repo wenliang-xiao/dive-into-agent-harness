@@ -1,7 +1,9 @@
 # ADR-0001：部署数据库选型 —— Turso 托管 SQLite（替代 PostgreSQL）
 
-- 状态：已采纳
+- 状态：**已废弃（superseded by change `remove-quiz-static-site`）**
 - 日期：2026-10-23
+
+> ⚠️ 本 ADR 已废弃。产品收敛为纯静态学习网站（无账号/进度/刷题），数据库整体移除，不再需要 Turso。仅作历史记录保留。
 
 ## 背景
 

@@ -1,8 +1,4 @@
-import { Quiz } from "@/components/quiz";
 import { CodeRunner } from "@/components/code-runner";
-import { getQuestions } from "@/lib/quiz/questions";
-
-export const questions = getQuestions("eval");
 
 ## 动机：改了代码，怎么知道没改坏
 
@@ -151,8 +147,6 @@ export const evalParams = [
 2. 实现「回归告警」：连续 N 次超预算就报错退出（对应 cc 的熔断器思想）。
 3. 用固定合成输入（如 1000 条会话）测「会话列表」这个用户路径，而不是测内部函数。
 4. **check 清单（自测）**：① 能答出 benchmark（离线防回退）和 trace（在线定位）的区别；② 能说出 `cacheReadTokens` 为什么连接「可观测」和「推理 KV cache」；③ 能构造一个触发失败模式（如工具死循环）的输入，观察 harness 怎么兜住。
-
-<Quiz questions={questions} />
 
 ## 延伸阅读
 

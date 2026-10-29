@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChapterActions } from "@/components/chapter-actions";
 import {
   chapters,
   getAdjacent,
@@ -33,8 +32,6 @@ export default async function ChapterPage({
       </header>
 
       <Content />
-
-      <ChapterActions slug={slug} />
 
       <nav className="mt-12 flex items-center justify-between border-t border-line pt-6">
         {prev ? (
