@@ -26,7 +26,7 @@ TBD - created by archiving change bootstrap-foundation. Update Purpose after arc
 - **THEN** 每个结论必须落到 `仓库:文件`（或 source map 还原出处），cc 相关内容标注「基于 source map 还原，非官方源码」
 
 ### Requirement: 素材约束
-内容 MUST 严格基于真实主流 harness 源码（opencode / codex / cc / pi / deepseek-harness / durable-harness / openclaw / hermes / qwen-audio-agent / xiaoaiclaw / corojaw），不虚构机制。
+内容 MUST 严格基于真实主流 harness 源码（opencode / codex / cc / pi / deepseek-harness / durable-harness / openclaw / hermes / qwen-audio-agent），不虚构机制。
 
 #### Scenario: 引用素材
 - **WHEN** 章节讲某机制
