@@ -76,6 +76,38 @@ benchmarks/
 
 一句话总结：我们写的「计时 + 预算断言」，就是 deepseek-harness benchmark 体系的骨架。它多出来的，是**按用户路径的目录组织**、**合成输入的严格约束**、和**内存维度的测量**。
 
+## 可观测：trace、telemetry、成本
+
+评测（benchmark）是**离线防回退**——跑固定用例，超预算就失败。可观测是**在线定位**——生产环境里一次请求慢了、错了，要能追到是哪一步。三个支柱：
+
+1. **trace（链路追踪）**：一次请求的完整调用链——调了几次模型、每次多少 token、工具执行多久。第 9 章的 trajectory 就是 trace 的结构化产物：它既是「这次请求怎么走的」记录，也是「训练下一代模型的原料」。
+2. **telemetry（指标聚合）**：把海量 trace 聚合成指标——P50/P99 延迟、token 用量、缓存命中率。单条 trace 看不出趋势，聚合指标才能看出「昨天 200ms、今天 2s」的回退。
+3. **成本（token 计量）**：agent 的多轮调用是花钱的，每次调用的 `inputTokens` / `outputTokens`、`cacheReadTokens`（命中缓存省了多少 prefill）都要记。
+
+**真实 trace 实例**（一段请求的元数据，对应第 9 章的 trajectory）：
+
+```jsonc
+{ "model": "openclaw", "stopReason": "toolUse",
+  "usage": { "inputTokens": 12625, "cacheReadTokens": 80448,   // ← 前缀命中缓存
+             "outputTokens": 301, "totalTokens": 93374 } }
+```
+
+`cacheReadTokens` 这个字段把「可观测」和「推理层 KV cache 复用」连在一起：**命中缓存越多，重复 prefill 越少，成本越低**——评测时要盯着缓存命中率，它直接决定 agent 的推理成本。
+
+**逐点映射**：我们写的 `benchmark(fn, samples, budget)`，就是 deepseek-harness 体系里 `recordTimings` 的骨架——我们多出来的「多次采样取中位数」对应它的「每个端点先记录」，我们缺的「内存测量」对应它的 `recordPeakMemory`。
+
+一句话：**benchmark 回答「有没有回退」，trace/telemetry/成本回答「回退在哪、贵在哪」。**
+
+## 失败模式：agent 怎么坏
+
+评测不能只测「happy path」（正常路径）。agent 会失败，而且失败有模式。Berkeley 的 MASFT 把多 agent 的失败归纳成 14 类、3 大类：
+
+1. **规格失败**：任务没说清、范围没划清——agent 做对了「错的事」。
+2. **交互失败**：agent 与 agent、agent 与工具之间通信出错——消息丢了、格式错了。
+3. **执行失败**：单 agent 内部的循环崩了——工具调用死循环、上下文撑爆、权限拦截后没兜住。
+
+评测 harness 时，要把这些失败模式变成**反例用例**：故意构造一个会触发失败模式的输入，看 harness 是**优雅失败**（返回错误、可恢复）还是**崩溃**（整个进程挂掉）。一个只测 happy path 的 benchmark，等于没测。
+
 ## 实验：改预算阈值，观察 pass/fail
 
 下面跑一次循环并计时，改 `budget`（预算阈值，毫秒）观察是否通过：
@@ -111,12 +143,14 @@ export const evalParams = [
 - 三大原则：**按用户路径组织、合成输入可复现、预算断言防回退**。
 - 测量要**计时 + 内存**双维度，中位数比单次采样稳。
 - 评测（离线防回退）与可观测（在线 trace 定位）是同一件事的两面。
+- 可观测三支柱：trace 定位、telemetry 看趋势、成本算钱；benchmark 防回退、可观测找位置。
 
 ## 练习（动手）
 
 1. 给 `benchmark` 加「内存测量」：用 `process.memoryUsage().rss` 记录峰值内存。
 2. 实现「回归告警」：连续 N 次超预算就报错退出（对应 cc 的熔断器思想）。
 3. 用固定合成输入（如 1000 条会话）测「会话列表」这个用户路径，而不是测内部函数。
+4. **check 清单（自测）**：① 能答出 benchmark（离线防回退）和 trace（在线定位）的区别；② 能说出 `cacheReadTokens` 为什么连接「可观测」和「推理 KV cache」；③ 能构造一个触发失败模式（如工具死循环）的输入，观察 harness 怎么兜住。
 
 <Quiz questions={questions} />
 
