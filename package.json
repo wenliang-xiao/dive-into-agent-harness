@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
@@ -30,6 +31,7 @@
     "drizzle-kit": "^0.31.11",
     "puppeteer-core": "^25.16.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
