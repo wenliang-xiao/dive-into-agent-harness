@@ -75,6 +75,80 @@ src/
 
 对比那十几行伪代码，你会发现：**核心循环没变，但每一环都变成了一个子系统**。本书的结构，就是按这个骨架展开——从「核心循环」出发，逐步加装「工具调用」「上下文与记忆」「沙箱与安全」「多 agent 编排」，最后到「评测与可观测」「前沿与生产」和「训练与部署闭环」。
 
+## 时间简史：harness 的来龙去脉
+
+<DiagramFrame src="/diagram/intro/harness-timeline.html" title="Agent Harness 时间简史（可交互）" />
+
+这本书讲 harness，但 harness 不是凭空出现的——它跟着模型一起长大。把时间线摊开，你会看到一条主线：**模型越强，越需要脚手架驾驭**。
+
+### 模型层三分天下
+
+三家硅谷大厂一边把前沿模型往前推，一边都在做自己的 harness——因为它们都意识到：**光有模型不够，得配脚手架才能干活**。
+
+- **Anthropic**：Claude 5.5 系列（Opus / Sonnet / Haiku），2024 年提出 [MCP](https://modelcontextprotocol.io)（工具生态标准化），2026 年提交 IPO 申请（S-1）。它的 harness 是 [Claude Code](https://github.com/anthropics/claude-code)——闭源，但 2026 年 3 月源码泄露，51 万行 TypeScript 被整个社区拆解还原。
+- **OpenAI**：[Codex](https://github.com/openai/codex)——本地 CLI、IDE 集成、云端 Codex Web，三形态覆盖。
+- **Google**：2026 年 10 月开源 [Harness²](https://github.com/google-research/harness2)——论文直接把「harness」写进标题，后面 RSI 部分细讲。
+
+### harness 层涌现：从「写死」到「可插拔」
+
+早期 harness 跟着具体产品走（Claude Code 属于 Anthropic、Codex 属于 OpenAI）。真正的转折是**开源 harness 大爆发**：
+
+| 项目 | 出品 | star（2026-10） | 一句话 |
+|---|---|---|---|
+| [OpenClaw](https://github.com/openclaw/openclaw) | openclaw | 39 万+ | 登顶 GitHub（超 Linux） |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) | deepseek-ai | 26 万+ | Everything is a Plugin |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | Nous Research | 25 万+ | self-improving agent |
+| [Claude Code](https://github.com/anthropics/claude-code) | anthropics | 15 万+ | 源码泄露被社区还原 |
+| [Codex CLI](https://github.com/openai/codex) / [OpenCode](https://github.com/sst/opencode) / [Pi](https://github.com/earendil-works/pi) | — | — | 开源极简 |
+
+两个信号特别关键：
+
+1. **DeepSeek Harness 的「Everything is a Plugin」**：harness 开始**模块化**——循环、工具、上下文都是插件，可换。
+2. **Pi 的「minimal, extensible」**：故意不做 subagent / plan mode，把能力交给 extensions / skills——**harness 从「大而全」转向「小而可扩展」**。
+
+（这两个趋势，第 5 章多 agent、第 7 章前沿会再展开。）
+
+### openclaw：从单机工具长成云端基础设施
+
+2025 年 11 月，奥地利开发者 Peter Steinberger 发起 [OpenClaw](https://github.com/openclaw/openclaw)。到 2026 年，它登顶 GitHub。
+
+它的设计点破了「生产化」的本质——**One Gateway**：
+
+> 同一个 harness，个人笔记本上跑是个人助手，团队部署是共享服务，**唯一区别是配置**。
+
+更关键的是它的架构宣言：**「Models and agent harnesses are plugins you can swap」**——**模型和 harness 彻底解耦**。这正是「agent = LLM + harness」的工程化体现：模型是马，harness 是缰绳，两样都能换。
+
+OpenClaw 由独立非营利 **OpenClaw Foundation（501(c)(3)）** 托管，没有付费墙。2026 年 9 月，Meta 的个人 agent **Muse** 被发现复用了 OpenClaw 内核——社区调侃「Muse is literally OpenClaw for normies」。
+
+### personal agent：从「编码助手」到「通用个人 agent」
+
+时间线推进到当下，harness 的主战场正在从「写代码」转向「当你的个人 agent」：
+
+- [Hermes Agent](https://github.com/NousResearch/hermes-agent)（25.8 万 star）自称 **「The agent that grows with you」**——跨 session 构建对你的理解，从经验里长出新技能。
+- **Muse**（Meta）：把 OpenClaw 内核包装成面向普通人的产品。
+- [durable-harness](https://github.com/vercel-labs/durable-harness)（Vercel Labs，2026-10）：让 agent 会话变成**可恢复的 workflow**——崩溃后从日志接着跑，不重复执行。
+
+### RSI 闭环：harness 开始「自我进化」
+
+最后一段，也是本书命题的收口——**递归自我改进（RSI）**。
+
+传统上，想让 agent 变强就换更强的模型。但 2026 年的几项工作把方向掉了个头：**冻结模型权重，让 harness 自己进化**：
+
+- [**Harness²**](https://github.com/google-research/harness2)（Google Research，2026-10，[arXiv:2610.14224](https://arxiv.org/abs/2610.14224)）：开篇公式就是 **Agent = Model + Harness**。它把 harness 拆成 8 类可编辑组件（system prompt、guardrails、记忆、工具说明、subagent、skills、scripts、plugin），用「对比行为差异」而非「比分数」来指导自我改进——单步把 GLM-5 在 WorkBuddy-Bench 拉高 11.5 分。
+- **RRSI**（谷歌云 × 斯坦福 × UNC）：把 agent 写成 **「固定模型 π + 可演化框架 H」**，并指出自我改进会过拟合，需要正则化。
+- **ModularRSI**（北航参与）：明确提出 **Harness RSI**——「模型始终冻结，harness 随执行经验变化」。
+- [**Hermes Agent**](https://github.com/NousResearch/hermes-agent)：README 明写 **trajectory 回灌训练下一代 tool-calling 模型**——这就是闭环的最后一环。
+
+国内这条线上，复旦的 [OpenMOSS](https://github.com/OpenMOSS) 在做 LLM 强化学习后训练（如 BandPO 算法）；而「Harness RSI」走的是另一条路——**不动模型，动脚手架**。两条路合起来，就是完整的 RSI 全景。
+
+### 收束：agent = LLM + harness
+
+把时间线串起来，就得到本书的核心命题：
+
+> **agent = LLM + harness**——模型是「会说话的」，harness 是把它变成「会干活的」的那层脚手架。模型越强，越需要脚手架驾驭；而 RSI 又把 harness 产出的 trajectory 回灌训练，让两者互相成就，形成闭环。
+
+后面八章，就是把这个「+ harness」逐层拆开：循环（第 1 章）、工具（第 2 章）、上下文（第 3 章）、沙箱（第 4 章）、多 agent（第 5 章）、评测（第 6 章）、前沿（第 7 章）、训练部署闭环（第 8 章）。
+
 ## 小结
 
 - harness 是**把大模型变成 agent 的框架**，核心是一个「调用模型 → 执行工具 → 回填结果」的消息循环。
@@ -85,7 +159,17 @@ src/
 
 ## 练习
 
+1. **一句话解释**：为什么说「大模型只会说话，harness 让它会干活」？举一个你身边的例子（个人开发或云端 agent）。
+2. **时间线排序**：把 OpenClaw、Claude Code、Harness²、Hermes Agent、DeepSeek Harness 按出现顺序排一排，说出每个「新」在哪。
+3. **区分两条 RSI**：说出「RL 后训练（改模型权重，如 OpenMOSS）」和「Harness RSI（改脚手架，如 ModularRSI / Harness²）」的本质区别。
+4. **check 清单（自测）**：① 能背出本书命题 agent = LLM + harness；② 能说出 harness 的三层生态（本体 / skills / RSI）；③ 能解释为什么「模型越强，越需要脚手架驾驭」。
+
 ## 延伸阅读
 
-（章节链接待全书完成后统一补充）
-- [OpenAI Codex CLI](https://github.com/openai/codex)——开源，本书「工具调用」「沙箱」章的主案例。
+- [OpenClaw](https://github.com/openclaw/openclaw)——登顶 GitHub 的开源 AI 助手，One Gateway 设计。
+- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)——「Everything is a Plugin」，本书第 6 / 8 章主案例。
+- [Harness²](https://github.com/google-research/harness2)——Google Research，论文《Recursive Agent Harnessing for an Open World》。
+- [Hermes Agent](https://github.com/NousResearch/hermes-agent)——self-improving agent，trajectory 回灌训练。
+- [durable-harness](https://github.com/vercel-labs/durable-harness)——Vercel Labs，durable execution。
+- [OpenMOSS](https://github.com/OpenMOSS)——复旦开源组织，LLM RL 后训练。
+- [OpenAI Codex CLI](https://github.com/openai/codex)——开源，本书「工具调用」「沙箱」章主案例。
