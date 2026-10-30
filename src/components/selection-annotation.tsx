@@ -77,12 +77,21 @@ export function SelectionAnnotation({
 
   const onMouseUp = useCallback(() => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    if (!sel || sel.isCollapsed || !sel.rangeCount) {
+      setToolbar(null);
+      return;
+    }
     const range = sel.getRangeAt(0);
     const quote = range.toString().trim();
-    if (!quote) return;
+    if (!quote) {
+      setToolbar(null);
+      return;
+    }
     const container = containerRef.current;
-    if (!container || !container.contains(range.commonAncestorContainer)) return;
+    if (!container || !container.contains(range.commonAncestorContainer)) {
+      setToolbar(null);
+      return;
+    }
     const rect = range.getBoundingClientRect();
     setToolbar({
       x: rect.left + rect.width / 2,
@@ -166,8 +175,9 @@ export function SelectionAnnotation({
       return;
     }
     setSubmitting(a.id);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const title = `[评审] ${chapterTitle} · ${a.quote.slice(0, 20)}`;
-    const body = `### 章节\n[${chapterTitle}](https://dive-into-agent-harness-nwyqapil7-wenlix.vercel.app/chapter/${a.slug})\n\n### 引文\n> ${a.quote}\n\n### 评论\n${a.comment}\n\n> 锚定：\`${a.prefix.slice(-20)}【${a.quote.slice(0, 20)}】${a.suffix.slice(0, 20)}\``;
+    const body = `### 章节\n[${chapterTitle}](${origin}/chapter/${a.slug})\n\n### 引文\n> ${a.quote}\n\n### 评论\n${a.comment}\n\n> 锚定：\`${a.prefix.slice(-20)}【${a.quote.slice(0, 20)}】${a.suffix.slice(0, 20)}\``;
     try {
       const res = await fetch("/api/issue", {
         method: "POST",
@@ -199,6 +209,7 @@ export function SelectionAnnotation({
         >
           <div className="flex items-center gap-1 text-xs">
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 setCommentDraft(toolbar);
                 setCommentText("");
@@ -209,6 +220,7 @@ export function SelectionAnnotation({
               💬 评论
             </button>
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 setAskDraft(toolbar);
                 setAskText("");
