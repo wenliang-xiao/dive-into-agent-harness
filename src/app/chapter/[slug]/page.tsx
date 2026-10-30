@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SelectionAnnotation } from "@/components/selection-annotation";
 import {
   chapters,
   getAdjacent,
@@ -31,7 +32,9 @@ export default async function ChapterPage({
         <p className="mt-3 text-muted">{chapter.summary}</p>
       </header>
 
-      <Content />
+      <SelectionAnnotation slug={slug} chapterTitle={chapter.title}>
+        <Content />
+      </SelectionAnnotation>
 
       <nav className="mt-12 flex items-center justify-between border-t border-line pt-6">
         {prev ? (

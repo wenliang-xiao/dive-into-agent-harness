@@ -180,3 +180,10 @@ body {
 pre:hover .copy-btn {
   opacity: 1;
 }
+
+/* 划线评论高亮（CSS Custom Highlight API） */
+::highlight(d2a-annotation) {
+  background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  text-decoration: underline wavy var(--accent);
+  text-decoration-skip-ink: none;
+}
